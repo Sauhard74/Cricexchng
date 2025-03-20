@@ -1,0 +1,166 @@
+/* ✅ Main Container */
+.home-container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  min-height: 100vh;
+}
+
+/* ✅ Tab Container Styling */
+.tab-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.tab {
+  padding: 12px 24px;
+  background-color: #e0e0e0;
+  color: #555;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.tab.active {
+  background-color: #ffcc00;
+  color: #000;
+  font-weight: bold;
+}
+
+.tab:hover {
+  background-color: #ffdb4d;
+}
+/* ✅ Input + Dropdown Styling (Fixed Width & Alignment) */
+.input-container {
+  display: flex;
+  justify-content: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+input[type="date"],
+select {
+  padding: 10px 14px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 14px;
+  color: #333;
+  background-color: #ffffff;
+  width: 220px; /* ✅ Fixed consistent width */
+  height: 40px; /* ✅ Same height */
+  transition: border 0.2s ease;
+}
+
+input[type="date"]:focus,
+select:focus {
+  border-color: #ffcc00;
+  outline: none;
+}
+
+/* ✅ Match List */
+.match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.match-card {
+  padding: 16px;
+  background-color: #ffffff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.match-card:hover {
+  transform: translateY(-2px);
+}
+
+.match-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.match-card p {
+  font-size: 14px;
+  color: #555;
+  margin: 0;
+}
+
+/* ✅ Button Group */
+.button-group {
+  display: flex;
+  gap: 10px;
+}
+
+.button-group button {
+  padding: 10px 18px;
+  background-color: #ffcc00;
+  color: #000;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.2s ease;
+  width: 100%;
+}
+
+.button-group button:hover {
+  background-color: #ffdb4d;
+}
+
+/* ✅ Responsive Styling */
+@media (max-width: 768px) {
+  .tab-container {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .input-container {
+    flex-direction: column;
+    gap: 12px; /* ✅ Increased gap for mobile */
+  }
+
+  input[type="date"],
+  select {
+    width: 100%; /* ✅ Full width on mobile */
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
+}
+
+.updating {
+  animation: flash 1s infinite;
+}
+
+@keyframes flash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.last-update {
+  font-size: 0.8em;
+  color: #666;
+  text-align: right;
+  margin: 10px 0;
+}
+
+.odds-display strong {
+  transition: opacity 0.3s ease;
+}

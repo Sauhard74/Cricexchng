@@ -1,0 +1,94 @@
+.profile-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.profile-card {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 10px;
+  width: 100%;
+  max-width: 800px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.profile-card h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+.credits-section {
+  margin-bottom: 20px;
+}
+
+.request-credits-btn {
+  background-color: #ffcc00;
+  color: #000;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.request-credits-btn:hover {
+  background-color: #ffdb4d;
+}
+
+.bets-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.bets-table th, .bets-table td {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+}
+
+.bets-table th {
+  background-color: #ffcc00;
+  font-weight: bold;
+}
+
+.bets-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.bet-history {
+  margin-top: 20px;
+}
+
+
+.request-credits-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.amount-input {
+  width: 150px;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.request-credits-btn {
+  background-color: #ffcc00;
+  color: #000;
+  border: none;
+  width: 150px;
+  padding: 8px;
+  border-radius: 5px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.request-credits-btn:hover {
+  background-color: #ffdb4d;
+}

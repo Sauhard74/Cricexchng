@@ -1,0 +1,129 @@
+/* ✅ Container Styling */
+.match-details-container {
+  padding: 20px;
+  background-image: url('../../../public/cricket-bg.jpg'); /* Ensure path is correct */
+  background-size: cover;
+  background-position: center;
+  color: #fff; /* White text for better visibility */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Stronger shadow for depth */
+  max-width: 1200px;
+  margin: 20px auto;
+  backdrop-filter: blur(8px); /* ✅ Adds a blur effect to make text pop */
+}
+
+/* ✅ Match Info Styling */
+.match-info h2 {
+  font-size: 28px;
+  font-weight: bold;
+  color: #ffcc00; /* Highlighted header */
+  margin-bottom: 12px;
+}
+
+.match-info p {
+  font-size: 18px;
+  margin: 6px 0;
+  color: #fff;
+}
+
+/* ✅ Tabs Styling */
+.tab-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.tab-container button {
+  padding: 12px 24px;
+  background-color: rgba(255, 255, 255, 0.1); /* Transparent white */
+  color: #ffcc00;
+  border: 1px solid #ffcc00;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.tab-container button.active {
+  background-color: #ffcc00;
+  color: #000;
+  font-weight: bold;
+}
+
+.tab-container button:hover {
+  background-color: #ffd633;
+  color: #000;
+}
+
+/* ✅ Table Styling */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+
+th,
+td {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Light border for better visibility */
+  text-align: center;
+}
+
+th {
+  background-color: #ffcc00;
+  color: #000;
+  font-weight: bold;
+}
+
+td {
+  background-color: rgba(0, 0, 0, 0.5); /* ✅ Darker background for better contrast */
+  color: #fff;
+}
+
+tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.7); /* ✅ Alternate row color */
+}
+
+tr:hover {
+  background-color: rgba(255, 204, 0, 0.2); /* ✅ Hover state */
+}
+
+/* ✅ Commentary Styling */
+.commentary-section {
+  margin-top: 20px;
+}
+
+.commentary-item {
+  padding: 12px;
+  background-color: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 10px;
+  border-radius: 8px;
+  color: #ffcc00;
+}
+
+.commentary-item:hover {
+  background-color: rgba(255, 204, 0, 0.2);
+}
+
+/* ✅ Responsive Fixes */
+@media (max-width: 768px) {
+  .match-details-container {
+    padding: 10px;
+  }
+
+  th,
+  td {
+    font-size: 14px;
+    padding: 6px;
+  }
+
+  .tab-container {
+    flex-direction: column;
+  }
+
+  .tab-container button {
+    width: 100%;
+  }
+}

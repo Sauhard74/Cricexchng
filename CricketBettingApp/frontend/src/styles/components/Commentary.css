@@ -1,0 +1,20 @@
+.commentary {
+  margin-top: 20px;
+}
+
+h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.commentary-entry {
+  padding: 10px;
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  margin-bottom: 10px;
+  border-radius: 5px;
+}
+
+p {
+  margin: 5px 0;
+}

@@ -1,0 +1,80 @@
+/* ✅ Header Container */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background-color: #1f1f1f;
+  color: #fff;
+}
+
+/* ✅ Logo Styling */
+.logo {
+  color: #ffcc00;
+  font-size: 26px;
+  font-weight: bold;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.logo:hover {
+  color: #ffd633;
+}
+
+/* ✅ Navigation Links */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.nav-links a {
+  color: #ffcc00;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 6px 12px;
+  transition: color 0.2s ease;
+  border-radius: 5px;
+}
+
+.nav-links a:hover {
+  color: #ffd633;
+  background-color: rgba(255, 204, 0, 0.1);
+}
+
+/* ✅ Logout Button Updated */
+.logout-btn {
+  background: none;
+  color: #ffcc00;
+  border: none;
+  font-size: 16px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+  background-color: #ffcc00;
+  color: #1f1f1f;
+}
+
+/* ✅ Mobile Responsive Fixes */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .logout-btn {
+    width: 100%;
+  }
+}
