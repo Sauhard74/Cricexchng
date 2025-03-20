@@ -37,6 +37,14 @@ const oddsSchema = new mongoose.Schema({
   lastUpdated: {
     type: Date,
     default: Date.now
+  },
+  homeTeamColor: {
+    type: String,
+    default: null
+  },
+  awayTeamColor: {
+    type: String,
+    default: null
   }
 });
 

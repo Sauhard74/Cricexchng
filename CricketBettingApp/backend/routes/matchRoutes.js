@@ -27,7 +27,9 @@ router.get("/matches/live", async (req, res) => {
             bookmaker: odd.bookmaker,
             scheduled: odd.commence,
             status: odd.status,
-            lastUpdated: odd.lastUpdated
+            lastUpdated: odd.lastUpdated,
+            home_team_color: odd.homeTeamColor,
+            away_team_color: odd.awayTeamColor
         }));
         
         console.log(`📊 Found ${matches.length} matches with odds`);
@@ -72,7 +74,9 @@ router.get("/matches/:date", async (req, res) => {
             status: odds.status || "not_started",
             home_odds: odds.homeOdds,
             away_odds: odds.awayOdds,
-            bookmaker: odds.bookmaker
+            bookmaker: odds.bookmaker,
+            home_team_color: odds.homeTeamColor,
+            away_team_color: odds.awayTeamColor
         }));
         
         // Group by matchId to remove duplicates (from different bookmakers)
@@ -129,7 +133,9 @@ router.get("/match/:matchId", async (req, res) => {
       status: matchFromOdds.status || "not_started",
       home_odds: matchFromOdds.homeOdds,
       away_odds: matchFromOdds.awayOdds,
-      bookmaker: matchFromOdds.bookmaker
+      bookmaker: matchFromOdds.bookmaker,
+      home_team_color: matchFromOdds.homeTeamColor,
+      away_team_color: matchFromOdds.awayTeamColor
     };
     
     console.log("✅ [ROUTE SUCCESS] Match details sent:", matchDetails);
