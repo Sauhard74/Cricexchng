@@ -8,7 +8,8 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState({
     username: '',
     phone: '',
-    credits: 0
+    credits: 0,
+    bets: [] // Initialize bets array
   });
   const [amount, setAmount] = useState(100);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +39,8 @@ const ProfilePage = () => {
         console.log('Profile data:', response.data);
         const profileData = {
           ...response.data,
-          credits: response.data.credits ? Number(response.data.credits) : 0
+          credits: response.data.credits ? Number(response.data.credits) : 0,
+          bets: response.data.bets || [] // Ensure bets is an array
         };
         setProfile(profileData);
         setIsLoading(false);
@@ -91,7 +93,8 @@ const ProfilePage = () => {
       });
       const updatedProfileData = {
         ...profileResponse.data,
-        credits: profileResponse.data.credits ? Number(profileResponse.data.credits) : 0
+        credits: profileResponse.data.credits ? Number(profileResponse.data.credits) : 0,
+        bets: profileResponse.data.bets || [] // Ensure bets is an array
       };
       setProfile(updatedProfileData);
       

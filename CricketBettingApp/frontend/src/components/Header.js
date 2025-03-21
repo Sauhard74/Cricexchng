@@ -21,7 +21,7 @@ const Header = () => {
   // ✅ Logout Handler
   const handleLogout = () => {
     logout();
-    navigate("/"); // ✅ Redirect to home after logout
+    navigate("/login"); // Redirect to login page after logout
     setIsUserDropdownOpen(false);
   };
 

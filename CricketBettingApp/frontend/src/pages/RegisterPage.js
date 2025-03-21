@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { register } from '../api/authService';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import '../styles/pages/auth.css';
 
 const RegisterPage = () => {
@@ -9,8 +9,10 @@ const RegisterPage = () => {
     username: '',
     phone: '',
     password: '',
+    confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -22,50 +24,118 @@ const RegisterPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    
+    // Validate password match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match. Please try again.');
+      return;
+    }
+    
+    setIsLoading(true);
+    
     try {
-      console.log('Submitting registration payload:', formData);
-      await register(formData);
+      // Remove confirmPassword before sending to API
+      const { confirmPassword, ...registerData } = formData;
+      console.log('Submitting registration payload:', registerData);
+      
+      await register(registerData);
       navigate('/login');
     } catch (error) {
       console.error('Registration failed:', error);
-      setError(error);
+      setError(error.response?.data?.error || 'Registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="auth-container">
-      <h2>📝 Register</h2>
-      {error && <p className="error">{error}</p>}
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          name="username"
-          placeholder="Username"
-          value={formData.username}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="tel"
-          name="phone"
-          placeholder="Phone"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
-        <button type="submit">Register</button>
+      <div className="auth-logo">
+        <h1>🏏 Cricket Betting</h1>
+      </div>
+      
+      <h2>Create Your Account</h2>
+      
+      {error && (
+        <div className="error-message">
+          <i className="fas fa-exclamation-circle"></i> {error}
+        </div>
+      )}
+      
+      <form className="auth-form" onSubmit={handleSubmit}>
+        <div className="input-group">
+          <label htmlFor="username">Username</label>
+          <input
+            id="username"
+            type="text"
+            name="username"
+            placeholder="Choose a unique username"
+            value={formData.username}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        
+        <div className="input-group">
+          <label htmlFor="phone">Phone Number</label>
+          <input
+            id="phone"
+            type="tel"
+            name="phone"
+            placeholder="Enter your phone number"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        
+        <div className="input-group">
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            name="password"
+            placeholder="Create a strong password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        
+        <div className="input-group">
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            name="confirmPassword"
+            placeholder="Confirm your password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        
+        <button 
+          type="submit" 
+          className="submit-button"
+          disabled={isLoading}
+          style={{ backgroundColor: 'blue', color: 'white' }} // blue button , white text
+        >
+          {isLoading ? 'Creating Account...' : 'Register'}
+        </button>
       </form>
-      <p>
-        Already have an account? <a href="/login">Login here</a>
+      
+      <div className="auth-divider">
+        <span>OR</span>
+      </div>
+      
+      <p className="auth-message">
+        Already have an account? <Link to="/login">Login instead</Link>
       </p>
+      
+      <div className="auth-footer">
+        &copy; {new Date().getFullYear()} Cricket Betting App. All rights reserved.
+      </div>
     </div>
   );
 };

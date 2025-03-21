@@ -369,62 +369,69 @@ useEffect(() => {
         </div>
       </div>
 
-      {/* Back and Lay Table - Improved with 4 distinct options */}
+      {/* Back and Lay Table - Updated Format */}
       <div className="back-lay-table">
-        <h3>Back/Lay Betting Options</h3>
-        <div className="back-lay-grid">
-            <div className="back-lay-team-header">{matchDetails?.home_team}</div>
-            <div className="back-lay-team-header">{matchDetails?.away_team}</div>
-            
-            {/* First row: Lay home, Back home */}
-            <div className="back-lay-row">
-                <div 
-                    className={`lay-box ${selectedBackLay && selectedBackLay.team === matchDetails.home_team && selectedBackLay.type === 'lay' ? 'selected' : ''}`}
-                    onClick={() => handleSelectBet(matchDetails.home_team, (parseFloat(matchDetails.home_odds) + 0.1).toFixed(2), 'lay')}
-                >
-                    <div className="bet-type-label">Lay</div>
-                    <div className="odds-value">{(parseFloat(matchDetails.home_odds) + 0.1).toFixed(2)}</div>
-                </div>
-                
-                <div 
-                    className={`back-box ${selectedBackLay && selectedBackLay.team === matchDetails.home_team && selectedBackLay.type === 'back' ? 'selected' : ''}`}
-                    onClick={() => handleSelectBet(matchDetails.home_team, matchDetails.home_odds, 'back')}
-                >
-                    <div className="bet-type-label">Back</div>
-                    <div className="odds-value">{matchDetails?.home_odds}</div>
-                </div>
+        <h3>Match Odds</h3>
+        <div className="match-odds-container">
+          {/* Column Headers */}
+          <div className="odds-header-row">
+            <div className="team-column-header"></div>
+            <div className="back-column-header">Back</div>
+            <div className="lay-column-header">Lay</div>
+          </div>
+          
+          {/* Home Team Row */}
+          <div className="odds-team-row">
+            <div className="team-name-cell">{matchDetails?.home_team}</div>
+            <div 
+              className={`back-cell ${selectedBackLay && selectedBackLay.team === matchDetails.home_team && selectedBackLay.type === 'back' ? 'selected' : ''}`}
+              onClick={() => handleSelectBet(matchDetails.home_team, matchDetails.home_odds, 'back')}
+            >
+              <div className="odds-value">{matchDetails?.home_odds}</div>
             </div>
-            
-            {/* Second row: Lay away, Back away */}
-            <div className="back-lay-row">
-                <div 
-                    className={`lay-box ${selectedBackLay && selectedBackLay.team === matchDetails.away_team && selectedBackLay.type === 'lay' ? 'selected' : ''}`}
-                    onClick={() => handleSelectBet(matchDetails.away_team, (parseFloat(matchDetails.away_odds) + 0.1).toFixed(2), 'lay')}
-                >
-                    <div className="bet-type-label">Lay</div>
-                    <div className="odds-value">{(parseFloat(matchDetails.away_odds) + 0.1).toFixed(2)}</div>
-                </div>
-                
-                <div 
-                    className={`back-box ${selectedBackLay && selectedBackLay.team === matchDetails.away_team && selectedBackLay.type === 'back' ? 'selected' : ''}`}
-                    onClick={() => handleSelectBet(matchDetails.away_team, matchDetails.away_odds, 'back')}
-                >
-                    <div className="bet-type-label">Back</div>
-                    <div className="odds-value">{matchDetails?.away_odds}</div>
-                </div>
+            <div 
+              className={`lay-cell ${selectedBackLay && selectedBackLay.team === matchDetails.home_team && selectedBackLay.type === 'lay' ? 'selected' : ''}`}
+              onClick={() => handleSelectBet(matchDetails.home_team, (parseFloat(matchDetails.home_odds) + 0.1).toFixed(2), 'lay')}
+            >
+              <div className="odds-value">{(parseFloat(matchDetails.home_odds) + 0.1).toFixed(2)}</div>
             </div>
+          </div>
+          
+          {/* Away Team Row */}
+          <div className="odds-team-row">
+            <div className="team-name-cell">{matchDetails?.away_team}</div>
+            <div 
+              className={`back-cell ${selectedBackLay && selectedBackLay.team === matchDetails.away_team && selectedBackLay.type === 'back' ? 'selected' : ''}`}
+              onClick={() => handleSelectBet(matchDetails.away_team, matchDetails.away_odds, 'back')}
+            >
+              <div className="odds-value">{matchDetails?.away_odds}</div>
+            </div>
+            <div 
+              className={`lay-cell ${selectedBackLay && selectedBackLay.team === matchDetails.away_team && selectedBackLay.type === 'lay' ? 'selected' : ''}`}
+              onClick={() => handleSelectBet(matchDetails.away_team, (parseFloat(matchDetails.away_odds) + 0.1).toFixed(2), 'lay')}
+            >
+              <div className="odds-value">{(parseFloat(matchDetails.away_odds) + 0.1).toFixed(2)}</div>
+            </div>
+          </div>
         </div>
         
         {selectedBackLay && (
-            <div className="selected-bet-info">
-                <p>Selected: <strong>{selectedBackLay.type === 'back' ? 'Back' : 'Lay'} {selectedBackLay.team}</strong> @ <strong>{selectedBackLay.odds}</strong></p>
-                {selectedBackLay.type === 'lay' && (
-                    <p>Liability: <strong>{(parseFloat(amount || 0) * (parseFloat(selectedBackLay.odds) - 1)).toFixed(2)}</strong></p>
-                )}
+          <div className="selected-bet-info">
+            <p className="selected-bet-title">Selected Bet:</p>
+            <div className="selected-bet-details">
+              <span className={`bet-type-indicator ${selectedBackLay.type === 'back' ? 'back-type' : 'lay-type'}`}>
+                {selectedBackLay.type === 'back' ? 'BACK' : 'LAY'}
+              </span>
+              <span className="selected-team">{selectedBackLay.team}</span>
+              <span className="selected-odds">@ {selectedBackLay.odds}</span>
             </div>
+            {selectedBackLay.type === 'lay' && amount > 0 && (
+              <p className="liability-note">Liability: <strong>₹{(parseFloat(amount || 0) * (parseFloat(selectedBackLay.odds) - 1)).toFixed(2)}</strong></p>
+            )}
+          </div>
         )}
-    </div>
-    
+      </div>
+      
       {/* Amount */}
       <div className="bet-amount-section">
         <h3>💵 Bet Amount:</h3>
