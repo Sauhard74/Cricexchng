@@ -40,6 +40,12 @@ const BettingPage = () => {
   const [betType, setBetType] = useState('winner');
   const [predictionValue, setPredictionValue] = useState('');
   const [team, setTeam] = useState('');
+const [odds, setOdds] = useState(null);
+const [selectedBackLay, setSelectedBackLay] = useState(null);
+
+
+
+
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -139,7 +145,53 @@ const BettingPage = () => {
     };
   }, [matchId, preferredBookmaker]);
 
-  // Calculate potential winnings whenever team or amount changes
+
+  // Handle Selection for Back and Lay
+  const handleSelectBet = (selectedTeam, selectedOdds, type) => {
+    setTeam(selectedTeam);
+    setOdds(selectedOdds);
+    setBetType(type);
+
+    setSelectedBackLay(prev => {
+        const newBackLay = { team: selectedTeam, type, odds: selectedOdds };
+        
+        // Ensure calculation happens after state update
+        calculatePotentialWinnings(newBackLay, selectedOdds);
+        return newBackLay;
+    });
+};
+
+const calculatePotentialWinnings = (backLay, odds) => {
+  if (!amount || !odds) {
+      setPotentialWinnings(0);
+      return;
+  }
+
+  if (backLay) {
+      if (backLay.type === 'back') {
+          // Correct calculation for back bet
+          const potential = parseFloat(amount) * backLay.odds;
+          setPotentialWinnings(potential.toFixed(2));
+      } else if (backLay.type === 'lay') {
+          // Correct calculation for lay bet (including stake subtraction)
+          const potential = (parseFloat(amount) * backLay.odds) - parseFloat(amount);
+          setPotentialWinnings(potential.toFixed(2));
+      }
+  } else {
+      if (betType === 'back') {
+          const potential = parseFloat(amount) * odds;
+          setPotentialWinnings(potential.toFixed(2));
+      } else if (betType === 'lay') {
+          const potential = (parseFloat(amount) * odds) - parseFloat(amount);
+          setPotentialWinnings(potential.toFixed(2));
+      }
+  }
+};
+
+// Ensure calculation only happens after state updates
+useEffect(() => {
+  calculatePotentialWinnings(selectedBackLay, odds);
+}, [odds, amount, betType, selectedBackLay]);
   useEffect(() => {
     if (!matchDetails || !team || !amount) {
       setPotentialWinnings(0);
@@ -163,7 +215,9 @@ const BettingPage = () => {
       }
       
       // Calculate winnings
-      const winnings = parseFloat(amount) * odds;
+      const winnings = betType === 'lay'
+  ? parseFloat(amount) * (odds - 1)  // Liability calculation for Lay
+  : parseFloat(amount) * odds;
       setPotentialWinnings(winnings.toFixed(2));
     } catch (error) {
       console.error('Error calculating potential winnings:', error);
@@ -270,12 +324,104 @@ const BettingPage = () => {
       </div>
 
       {/* Current Odds */}
+
+    {/* 🔥 Back and Lay Table */}
+    <div className="back-lay-table">
+        <table>
+            <thead>
+                <tr>
+                    <th>{matchDetails?.home_team} Back</th>
+                    <th>{matchDetails?.home_team} Lay</th>
+                    <th>{matchDetails?.away_team} Back</th>
+                    <th>{matchDetails?.away_team} Lay</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                <td onClick={() => handleSelectBet(matchDetails.home_team, matchDetails.home_odds, 'back')}>
+                {matchDetails?.home_odds}
+              </td>
+              <td onClick={() => handleSelectBet(matchDetails.home_team, matchDetails.home_odds + 0.1, 'lay')}>
+                {(matchDetails?.home_odds + 0.1).toFixed(2)}
+              </td>
+              <td onClick={() => handleSelectBet(matchDetails.away_team, matchDetails.away_odds, 'back')}>
+                {matchDetails?.away_odds}
+              </td>
+              <td onClick={() => handleSelectBet(matchDetails.away_team, matchDetails.away_odds + 0.1, 'lay')}>
+                {(matchDetails?.away_odds + 0.1).toFixed(2)}
+              </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    
+
+    {/* 🔥 Back and Lay Table */}
+    <div className="back-lay-table">
+        <div className="odds-row">
+            {/* Back and Lay for Home Team */}
+            <div 
+                className={`odds-box ${team === matchDetails?.home_team && betType === 'back' ? 'selected' : ''}`}
+                onClick={() => {
+        setSelectedBackLay(null);
+        setSelectedBackLay({ team: matchDetails?.home_team, type: 'back', odds: matchDetails?.home_odds });
+        setTeam(matchDetails?.home_team);
+setOdds(matchDetails?.home_odds);
+        setOdds(matchDetails?.home_odds);
+    }}
+            >
+                Back {matchDetails?.home_team}: {matchDetails?.home_odds}
+            </div>
+            <div 
+                className={`odds-box ${team === matchDetails?.home_team && betType === 'lay' ? 'selected' : ''}`}
+                onClick={() => {
+        setSelectedBackLay(null);
+setSelectedBackLay({ team: matchDetails?.home_team, type: 'lay', odds: (matchDetails?.home_odds + 0.1).toFixed(2) });
+setTeam(matchDetails?.home_team);
+setOdds((matchDetails?.home_odds + 0.1).toFixed(2));
+        setOdds((matchDetails?.home_odds + 0.1).toFixed(2));
+    }}
+            >
+                Lay {matchDetails?.home_team}: {(matchDetails?.home_odds + 0.1).toFixed(2)}
+            </div>
+
+            {/* Back and Lay for Away Team */}
+            <div 
+                className={`odds-box ${team === matchDetails?.away_team && betType === 'back' ? 'selected' : ''}`}
+                onClick={() => {
+        setSelectedBackLay(null);
+setSelectedBackLay({ team: matchDetails?.away_team, type: 'back', odds: matchDetails?.away_odds });
+setTeam(matchDetails?.away_team);
+setOdds(matchDetails?.away_odds);
+        setOdds(matchDetails?.away_odds);
+    }}
+            >
+                Back {matchDetails?.away_team}: {matchDetails?.away_odds}
+            </div>
+            <div 
+                className={`odds-box ${team === matchDetails?.away_team && betType === 'lay' ? 'selected' : ''}`}
+                onClick={() => {
+        setSelectedBackLay(null);
+setSelectedBackLay({ team: matchDetails?.away_team, type: 'lay', odds: (matchDetails?.away_odds + 0.1).toFixed(2) });
+setTeam(matchDetails?.away_team);
+setOdds((matchDetails?.away_odds + 0.1).toFixed(2));
+        setOdds((matchDetails?.away_odds + 0.1).toFixed(2));
+    }}
+            >
+                Lay {matchDetails?.away_team}: {(matchDetails?.away_odds + 0.1).toFixed(2)}
+            </div>
+        </div>
+    </div>
+    
       <div className="odds-container">
         <h3>Select Team to Bet On:</h3>
         <div className="team-odds-boxes">
           <div
             className={`odds-box ${team === matchDetails.home_team ? 'selected' : ''}`}
-            onClick={() => setTeam(matchDetails.home_team)}
+            onClick={() => {
+        if (!selectedBackLay) setTeam(matchDetails.home_team);
+setOdds(matchDetails?.home_odds);;
+    }}
           >
             <span className="team-name">{matchDetails.home_team}</span>
             <span className="odds-value">
@@ -286,7 +432,10 @@ const BettingPage = () => {
           </div>
           <div
             className={`odds-box ${team === matchDetails.away_team ? 'selected' : ''}`}
-            onClick={() => setTeam(matchDetails.away_team)}
+            onClick={() => {
+        if (!selectedBackLay) setTeam(matchDetails.away_team);
+setOdds(matchDetails?.away_odds);;
+    }}
           >
             <span className="team-name">{matchDetails.away_team}</span>
             <span className="odds-value">
