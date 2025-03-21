@@ -2,7 +2,23 @@ import React from 'react';
 import '../styles/components/BetConfirmationModal.css';
 
 const BetConfirmationModal = ({ matchDetails, betDetails, onConfirm, onCancel }) => {
-  const { team, amount, betType, predictionValue, potentialWinnings } = betDetails;
+  const { team, amount, betType, predictionValue, potentialWinnings, odds, liability } = betDetails;
+  
+  // Helper function to get a readable bet type description
+  const getBetTypeDescription = () => {
+    switch (betType) {
+      case 'winner': return 'Match Winner';
+      case 'runs': return 'Total Runs';
+      case 'wickets': return 'Total Wickets';
+      case 'back': return 'Back Bet';
+      case 'lay': return 'Lay Bet';
+      default: return betType;
+    }
+  };
+  
+  // Calculate liability if it's a lay bet
+  const calculatedLiability = betType === 'lay' && odds ? 
+    parseFloat(amount) * (parseFloat(odds) - 1) : 0;
   
   return (
     <div className="modal-overlay">
@@ -22,6 +38,10 @@ const BetConfirmationModal = ({ matchDetails, betDetails, onConfirm, onCancel })
               {matchDetails.away_team}
             </div>
           </div>
+        </div>
+        
+        <div className={`bet-type-header ${betType === 'back' ? 'back-header' : 'lay-header'}`}>
+          {betType === 'back' ? 'Back Bet' : 'Lay Bet'}
         </div>
         
         <div className="confirmation-details">
@@ -70,8 +90,8 @@ const BetConfirmationModal = ({ matchDetails, betDetails, onConfirm, onCancel })
           <button className="cancel-button" onClick={onCancel}>
             Cancel
           </button>
-          <button className="confirm-button" onClick={onConfirm}>
-            Confirm Bet
+          <button className={`confirm-button ${betType === 'back' ? 'back-button' : 'lay-button'}`} onClick={onConfirm}>
+            Confirm {betType === 'back' ? 'Back' : 'Lay'} Bet
           </button>
         </div>
       </div>

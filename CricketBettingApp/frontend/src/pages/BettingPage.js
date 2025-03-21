@@ -40,6 +40,9 @@ const BettingPage = () => {
   const [betType, setBetType] = useState('winner');
   const [predictionValue, setPredictionValue] = useState('');
   const [team, setTeam] = useState('');
+  const [odds, setOdds] = useState(null);
+  const [selectedBackLay, setSelectedBackLay] = useState(null);
+
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -139,37 +142,91 @@ const BettingPage = () => {
     };
   }, [matchId, preferredBookmaker]);
 
-  // Calculate potential winnings whenever team or amount changes
-  useEffect(() => {
-    if (!matchDetails || !team || !amount) {
+  // Handle Selection for Back and Lay
+  const handleSelectBet = (selectedTeam, selectedOdds, type) => {
+    setTeam(selectedTeam);
+    setOdds(selectedOdds);
+    setBetType(type);
+
+    setSelectedBackLay(prev => {
+        const newBackLay = { team: selectedTeam, type, odds: selectedOdds };
+        
+        // Ensure calculation happens after state update
+        calculatePotentialWinnings(newBackLay, selectedOdds);
+        return newBackLay;
+    });
+};
+
+const calculatePotentialWinnings = (backLay, odds) => {
+  if (!amount || amount === '' || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+      setPotentialWinnings(0);
+      return;
+  }
+
+  const betAmount = parseFloat(amount);
+  
+  if (backLay) {
+      if (backLay.type === 'back') {
+          // For back bet - potential profit = stake * (odds - 1)
+          const profit = betAmount * (parseFloat(backLay.odds) - 1);
+          setPotentialWinnings(profit.toFixed(2));
+      } else if (backLay.type === 'lay') {
+          // For lay bet:
+          // - Potential profit = stake (what you can win)
+          // - Liability = stake * (odds - 1) (what you can lose)
+          setPotentialWinnings(betAmount.toFixed(2));
+      }
+  } else if (betType === 'winner') {
+      // Standard match winner bet - potential profit = stake * (odds - 1)
+      const selectedOdds = parseFloat(odds);
+      if (!isNaN(selectedOdds)) {
+          const profit = betAmount * (selectedOdds - 1);
+          setPotentialWinnings(profit.toFixed(2));
+      }
+  } else if (betType === 'runs' || betType === 'wickets') {
+      // Standard profit calculation for prediction bets
+      const profit = betAmount * 1.9; // Typically prediction bets pay 1.9x stake
+      setPotentialWinnings(profit.toFixed(2));
+  }
+};
+
+// Ensure calculation only happens after state updates
+useEffect(() => {
+  calculatePotentialWinnings(selectedBackLay, odds);
+}, [odds, amount, betType, selectedBackLay]);
+
+useEffect(() => {
+  if (!matchDetails || !team || !amount || amount === '' || isNaN(parseFloat(amount))) {
+    setPotentialWinnings(0);
+    return;
+  }
+
+  try {
+    // Get the odds for the selected team
+    let odds = team === matchDetails.home_team 
+      ? matchDetails.home_odds 
+      : matchDetails.away_odds;
+    
+    // Ensure odds is a number
+    odds = parseFloat(odds);
+    
+    // Check if odds is a valid number
+    if (isNaN(odds)) {
+      console.error('Invalid odds value:', odds);
       setPotentialWinnings(0);
       return;
     }
-
-    try {
-      // Get the odds for the selected team
-      let odds = team === matchDetails.home_team 
-        ? matchDetails.home_odds 
-        : matchDetails.away_odds;
-      
-      // Ensure odds is a number
-      odds = parseFloat(odds);
-      
-      // Check if odds is a valid number
-      if (isNaN(odds)) {
-        console.error('Invalid odds value:', odds);
-        setPotentialWinnings(0);
-        return;
-      }
-      
-      // Calculate winnings
-      const winnings = parseFloat(amount) * odds;
-      setPotentialWinnings(winnings.toFixed(2));
-    } catch (error) {
-      console.error('Error calculating potential winnings:', error);
-      setPotentialWinnings(0);
-    }
-  }, [team, amount, matchDetails]);
+    
+    // Calculate winnings
+    const winnings = betType === 'lay'
+? parseFloat(amount) * (odds - 1)  // Liability calculation for Lay
+: parseFloat(amount) * odds;
+    setPotentialWinnings(winnings.toFixed(2));
+  } catch (error) {
+    console.error('Error calculating potential winnings:', error);
+    setPotentialWinnings(0);
+  }
+}, [team, amount, matchDetails]);
 
   // Handle opening the confirmation modal
   const handleOpenConfirmation = () => {
@@ -177,9 +234,68 @@ const BettingPage = () => {
     setShowConfirmation(true);
   };
 
+  // Handle placing the bet after confirmation
+  const handlePlaceBet = async () => {
+    try {
+      if (!validateBet()) {
+        return;
+      }
+
+      // Create bet data object based on bet type
+      const betData = {
+        matchId: matchId,
+        team,
+        amount: parseFloat(amount)
+      };
+
+      // Add type-specific fields
+      if (selectedBackLay) {
+        // Back/Lay bet
+        betData.betType = selectedBackLay.type;
+        betData.odds = parseFloat(selectedBackLay.odds);
+        
+        // Calculate liability for lay bets
+        if (selectedBackLay.type === 'lay') {
+          betData.liability = parseFloat(amount) * (parseFloat(selectedBackLay.odds) - 1);
+        }
+      } else if (betType === 'runs' || betType === 'wickets') {
+        // Runs/Wickets prediction bet
+        betData.betType = betType;
+        betData.predictionValue = parseFloat(predictionValue);
+      } else {
+        // Standard winner bet
+        betData.betType = 'winner';
+      }
+
+      console.log('Placing bet with data:', betData);
+
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/bet/place`,
+        betData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update local user credits after successful bet
+      setUserCredits(prev => prev - parseFloat(amount));
+      
+      // Reset form after successful bet
+      setAmount('');
+      setTeam('');
+      setSelectedBackLay(null);
+      setPredictionValue('');
+      
+      alert('Bet placed successfully!');
+      navigate('/'); // Redirect to home page
+    } catch (error) {
+      console.error('Error placing bet:', error);
+      alert(error.response?.data?.error || 'Failed to place bet');
+    }
+  };
+
   // Validate the bet inputs
   const validateBet = () => {
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || amount === '' || parseFloat(amount) <= 0) {
       alert('Please enter a valid bet amount');
       return false;
     }
@@ -194,47 +310,12 @@ const BettingPage = () => {
       return false;
     }
     
-    if ((betType === 'runs' || betType === 'wickets') && !predictionValue) {
+    if (!selectedBackLay && (betType === 'runs' || betType === 'wickets') && !predictionValue) {
       alert(`Please enter a prediction for ${betType}`);
       return false;
     }
     
     return true;
-  };
-
-  // Handle placing the bet after confirmation
-  const handlePlaceBet = async () => {
-    try {
-      if (!amount || !team) {
-        alert('Please select a team and enter an amount');
-        return;
-      }
-
-      if (parseFloat(amount) > userCredits) {
-        alert('Insufficient credits');
-        return;
-      }
-
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/bet/place`,
-        {
-          matchId: matchId, // Remove the double decoding here as well
-          team,
-          amount: parseFloat(amount),
-          betType: 'winner'
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update local user credits after successful bet
-      setUserCredits(prev => prev - parseFloat(amount));
-      alert('Bet placed successfully!');
-      navigate('/'); // Redirect to home page
-    } catch (error) {
-      console.error('Error placing bet:', error);
-      alert(error.response?.data?.error || 'Failed to place bet');
-    }
   };
 
   if (loading) {
@@ -426,9 +507,12 @@ const BettingPage = () => {
           betDetails={{
             team,
             amount,
-            betType,
+            betType: selectedBackLay ? selectedBackLay.type : betType,
             predictionValue,
-            potentialWinnings
+            potentialWinnings,
+            odds: selectedBackLay ? selectedBackLay.odds : null,
+            liability: selectedBackLay && selectedBackLay.type === 'lay' ? 
+              parseFloat(amount) * (parseFloat(selectedBackLay.odds) - 1) : null
           }}
           onConfirm={handlePlaceBet}
           onCancel={() => setShowConfirmation(false)}

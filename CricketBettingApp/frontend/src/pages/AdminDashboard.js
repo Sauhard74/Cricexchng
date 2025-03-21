@@ -419,8 +419,9 @@ const AdminDashboard = () => {
               <th>Username</th>
               <th>Amount</th>
               <th>Team</th>
-              <th>Status</th>
               <th>Bet Type</th>
+              <th>Odds</th>
+              <th>Status</th>
               <th>Prediction</th>
               <th>Actions</th>
             </tr>
@@ -432,6 +433,20 @@ const AdminDashboard = () => {
                 <td>{bet.username}</td>
                 <td>{bet.amount}</td>
                 <td>{bet.team}</td>
+                <td>
+                  <span className={`bet-type ${bet.betType}`}>
+                    {bet.betType === 'back' ? '📈 Back' : 
+                     bet.betType === 'lay' ? '📉 Lay' : 
+                     bet.betType === 'winner' ? '🏆 Winner' : 
+                     bet.betType}
+                  </span>
+                </td>
+                <td>{bet.odds || '-'}</td>
+                <td>
+                  <span className={`bet-status ${bet.status.toLowerCase()}`}>
+                    {bet.status}
+                  </span>
+                </td>
                 <td className={`bet-status bet-status-${bet.status.toLowerCase()}`}>
                   {bet.status}
                 </td>

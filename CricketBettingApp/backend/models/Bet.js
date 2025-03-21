@@ -4,25 +4,45 @@ const betSchema = new mongoose.Schema({
   username: { type: String, required: true },
   matchId: { type: String, required: true },
 
-  // ✅ team should be required only if betType = "winner"
+  // ✅ Required only for winner, back, and lay
   team: {
     type: String,
     required: function() {
-      return this.betType === 'winner';
+      return this.betType === 'winner' || this.betType === 'back' || this.betType === 'lay';
     }
   },
 
   amount: { type: Number, required: true },
 
-  // ✅ New bet types included
-  betType: { type: String, required: true, enum: ["winner", "runs", "wickets"] },
+  // ✅ Now supports back and lay
+  betType: { 
+    type: String, 
+    required: true, 
+    enum: ["winner", "runs", "wickets", "back", "lay"] 
+  },
 
-  // ✅ Prediction value for runs or wickets
+  // ✅ Prediction value for runs/wickets
   predictionValue: {
     type: Number,
     required: function() {
-      return this.betType !== 'winner';
+      return this.betType !== 'winner' && this.betType !== 'back' && this.betType !== 'lay';
     }
+  },
+
+  // ✅ Odds for back and lay bets
+  odds: { 
+    type: Number, 
+    required: function() {
+      return this.betType === 'back' || this.betType === 'lay';
+    } 
+  },
+
+  // ✅ Liability for lay bets only
+  liability: { 
+    type: Number, 
+    required: function() {
+      return this.betType === 'lay';
+    } 
   },
 
   status: { type: String, default: "Pending" }

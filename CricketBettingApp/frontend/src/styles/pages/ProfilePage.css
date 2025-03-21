@@ -286,6 +286,61 @@
   margin-bottom: 1rem;
 }
 
+/* Bet Type Styles */
+.bet-type {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.bet-type.back {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+
+.bet-type.lay {
+  background-color: #fff1f0;
+  color: #ff4d4f;
+  border: 1px solid #ffa39e;
+}
+
+.bet-type.winner {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+/* Bet Status Styles */
+.bet-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.bet-status.pending {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+
+.bet-status.won {
+  background-color: #f6ffed;
+  color: #52c41a;
+  border: 1px solid #b7eb8f;
+}
+
+.bet-status.lost {
+  background-color: #fff1f0;
+  color: #ff4d4f;
+  border: 1px solid #ffa39e;
+}
+
+.request-credits-container {
 .form-actions button {
   flex: 1;
 }

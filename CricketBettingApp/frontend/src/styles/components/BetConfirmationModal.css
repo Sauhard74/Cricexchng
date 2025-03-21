@@ -203,6 +203,15 @@
 .confirm-button {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.back-button {
+  background: linear-gradient(135deg, #1890ff, #096dd9);
+}
+
+.lay-button {
+  background: linear-gradient(135deg, #ff4d4f, #cf1322);
 }
 
 .cancel-button:hover {
