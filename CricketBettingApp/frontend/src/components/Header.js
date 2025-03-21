@@ -4,12 +4,19 @@ import "../styles/components/Header.css";
 import { useState, useEffect, useRef } from 'react';
 
 const Header = () => {
-  const { isAuthenticated, user, logout, isAdmin } = useAuth();
+  const { isAuthenticated, user, logout, isAdmin, updateUserData } = useAuth();
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
   const mobileMenuRef = useRef(null);
+
+  // Refresh user data when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      updateUserData();
+    }
+  }, [isAuthenticated, updateUserData]);
 
   // ✅ Logout Handler
   const handleLogout = () => {
@@ -34,6 +41,9 @@ const Header = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Get display name with fallback
+  const displayName = user?.name || (user?.username ? user.username : 'User');
 
   return (
     <header className="header">
@@ -82,9 +92,7 @@ const Header = () => {
                 Home
               </Link>
             </li>
-            <li>
-              <Link to="/live-scores" className="nav-link">Live Scores</Link>
-            </li>
+             
             <li className="dropdown">
               <button className="nav-link dropdown-toggle">
                 Sports <i className="dropdown-icon">▼</i>
@@ -96,9 +104,7 @@ const Header = () => {
                 <li><Link to="/cricket/leagues">Leagues</Link></li>
               </ul>
             </li>
-            <li>
-              <Link to="/promotions" className="nav-link">Promotions</Link>
-            </li>
+           
             {isAdmin && (
               <li>
                 <Link to="/admin/dashboard" className="nav-link admin-link">Admin</Link>
@@ -116,9 +122,9 @@ const Header = () => {
                 onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
               >
                 <div className="user-avatar">
-                  {user?.name?.charAt(0) || 'U'}
+                  {displayName.charAt(0) || 'U'}
                 </div>
-                <span className="user-name">{user?.name || 'User'}</span>
+                <span className="user-name">{displayName}</span>
                 <i className="dropdown-icon">▼</i>
               </button>
               
@@ -127,7 +133,7 @@ const Header = () => {
                   <div className="user-dropdown-header">
                     <div className="user-info">
                       <span className="user-greeting">Welcome,</span>
-                      <span className="user-full-name">{user?.name || 'User'}</span>
+                      <span className="user-full-name">{displayName}</span>
                       <span className="user-balance">Balance: ₹{user?.credits?.toFixed(2) || '0.00'}</span>
                     </div>
                   </div>
@@ -138,15 +144,11 @@ const Header = () => {
                       </Link>
                     </li>
                     <li>
-                      <Link to="/my-bets" onClick={() => setIsUserDropdownOpen(false)}>
+                      <Link to="/bets" onClick={() => setIsUserDropdownOpen(false)}>
                         <i className="menu-icon bets-icon">🎯</i> My Bets
                       </Link>
                     </li>
-                    <li>
-                      <Link to="/transactions" onClick={() => setIsUserDropdownOpen(false)}>
-                        <i className="menu-icon wallet-icon">💰</i> Transactions
-                      </Link>
-                    </li>
+                   
                     {isAdmin && (
                       <li>
                         <Link to="/admin/dashboard" onClick={() => setIsUserDropdownOpen(false)}>

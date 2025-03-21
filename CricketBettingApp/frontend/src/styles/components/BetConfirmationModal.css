@@ -4,90 +4,211 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(15, 23, 42, 0.75);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .bet-confirmation-modal {
   background-color: #fff;
-  border-radius: 8px;
-  padding: 24px;
+  border-radius: 12px;
   width: 90%;
   max-width: 500px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  animation: slideUp 0.3s ease-out;
+  overflow: hidden;
 }
 
-.bet-confirmation-modal h2 {
-  color: #2c3e50;
-  margin-top: 0;
-  margin-bottom: 20px;
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 1.8rem;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.close-button:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.match-summary {
+  padding: 1.25rem;
+  background-color: #f8fafc;
+  position: relative;
   text-align: center;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+}
+
+.vs-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #3b82f6;
+  color: white;
+  font-weight: 700;
+  padding: 0.3rem 0.6rem;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  z-index: 2;
+}
+
+.team-container {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.team {
+  flex: 1;
+  padding: 1rem;
+  background-color: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #1e293b;
+  text-align: center;
+  transition: all 0.2s;
+}
+
+.team.selected {
+  border-color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.05);
+  color: #3b82f6;
 }
 
 .confirmation-details {
-  margin-bottom: 20px;
+  padding: 1.25rem 1.5rem;
 }
 
 .confirmation-row {
   display: flex;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid #f0f0f0;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.95rem;
 }
 
-.confirmation-row.highlight {
-  background-color: #f8f9fa;
-  padding: 12px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  color: #2c3e50;
-  margin: 10px 0;
+.confirmation-row span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+}
+
+.confirmation-row .value {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.confirmation-row .value.highlight {
+  color: #3b82f6;
+}
+
+.confirmation-row.highlight-row {
+  background-color: #f1f9f5;
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 0.75rem 0;
+  border: none;
+}
+
+.confirmation-row.highlight-row span {
+  color: #065f46;
+}
+
+.win-value {
+  font-size: 1.25rem;
+  color: #10b981 !important;
+  font-weight: 700;
 }
 
 .confirmation-warning {
   background-color: #fff3cd;
-  color: #856404;
-  padding: 10px;
-  border-radius: 4px;
-  margin: 15px 0;
-  font-size: 14px;
+  padding: 1rem 1.5rem;
+  margin: 0 1.5rem 1.25rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.confirmation-warning i {
+  color: #d97706;
+  font-size: 1.1rem;
+  margin-top: 0.25rem;
+}
+
+.confirmation-warning p {
+  margin: 0;
+  color: #78350f;
+  font-size: 0.95rem;
 }
 
 .confirmation-buttons {
   display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
+  padding: 1.25rem 1.5rem 1.5rem;
+  gap: 1rem;
 }
 
 .cancel-button, .confirm-button {
-  padding: 10px 20px;
-  border-radius: 4px;
-  font-weight: bold;
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
   border: none;
-  width: 48%;
+  font-size: 1rem;
+  text-align: center;
 }
 
 .cancel-button {
-  background-color: #f8f9fa;
-  color: #495057;
+  background-color: #f1f5f9;
+  color: #475569;
 }
 
 .confirm-button {
-  background-color: #28a745;
+  background: linear-gradient(135deg, #10b981, #059669);
   color: white;
 }
 
 .cancel-button:hover {
-  background-color: #e9ecef;
+  background-color: #e2e8f0;
 }
 
 .confirm-button:hover {
-  background-color: #218838;
+  background: linear-gradient(135deg, #059669, #047857);
 } 

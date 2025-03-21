@@ -58,9 +58,26 @@ router.get("/matches/:date", async (req, res) => {
         const matchesForDate = oddsEntries.filter(odds => {
             if (!odds.commence) return true; // Include if no date specified
             
-            // Convert commence to date format for comparison
-            const oddsDate = new Date(odds.commence).toISOString().split('T')[0];
-            return oddsDate === date;
+            // Create a date object from the commence time
+            const oddsDateObj = new Date(odds.commence);
+            
+            // Create a date object from the requested date (ensure it's in the same timezone)
+            const requestedDate = new Date(date);
+            
+            // Format both to YYYY-MM-DD in local timezone
+            const oddsDateFormatted = oddsDateObj.toLocaleDateString('en-CA'); // en-CA uses YYYY-MM-DD format
+            const requestedDateFormatted = requestedDate.toLocaleDateString('en-CA');
+            
+            // Log for debugging
+            console.log(`Match ${odds.matchId}:
+              - commence time: ${odds.commence}
+              - odds date obj: ${oddsDateObj}
+              - formatted odds date: ${oddsDateFormatted}
+              - requested date: ${date}
+              - formatted requested date: ${requestedDateFormatted}
+              - match? ${oddsDateFormatted === requestedDateFormatted}`);
+            
+            return oddsDateFormatted === requestedDateFormatted;
         });
         
         // Create match objects from odds data
@@ -145,6 +162,121 @@ router.get("/match/:matchId", async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve match details" });
   }
 });
+
+// ✅ New endpoint for live scores
+router.get("/match/:matchId/livescores", async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    console.log(`🟡 [ROUTE HIT] Fetching live scores for match ID: ${matchId}`);
+    
+    // Find the match with exact matchId
+    const matchFromOdds = await Odds.findOne({ matchId });
+    
+    if (!matchFromOdds) {
+      console.log(`⚠️ No match found with ID: ${matchId}`);
+      return res.status(404).json({ error: "Match not found" });
+    }
+    
+    // Check if we have a match in the match collection (for more detailed data)
+    const matchDetail = await Match.findOne({ matchId }) || {};
+    
+    // Combine data from both collections
+    const currentInningsNumber = matchDetail.currentInnings || 1;
+    const battingTeam = currentInningsNumber % 2 === 1 ? matchFromOdds.homeTeam : matchFromOdds.awayTeam;
+    const bowlingTeam = currentInningsNumber % 2 === 1 ? matchFromOdds.awayTeam : matchFromOdds.homeTeam;
+    
+    // Create mock batsmen if not available from DB
+    const currentBatsmen = matchDetail.currentBatsmen || [
+      {
+        name: `${battingTeam} Batsman 1`,
+        runs: Math.floor(Math.random() * 60),
+        balls_faced: Math.floor(Math.random() * 40) + 10,
+        fours: Math.floor(Math.random() * 5),
+        sixes: Math.floor(Math.random() * 3),
+        strike_rate: (Math.random() * 50 + 100).toFixed(2),
+        on_strike: true
+      },
+      {
+        name: `${battingTeam} Batsman 2`,
+        runs: Math.floor(Math.random() * 30),
+        balls_faced: Math.floor(Math.random() * 30) + 5,
+        fours: Math.floor(Math.random() * 3),
+        sixes: Math.floor(Math.random() * 2),
+        strike_rate: (Math.random() * 50 + 100).toFixed(2),
+        on_strike: false
+      }
+    ];
+    
+    // Create mock bowler if not available from DB
+    const currentBowler = matchDetail.currentBowler || {
+      name: `${bowlingTeam} Bowler`,
+      overs: `${Math.floor(Math.random() * 4)}.${Math.floor(Math.random() * 6)}`,
+      maidens: Math.floor(Math.random() * 2),
+      runs_conceded: Math.floor(Math.random() * 30),
+      wickets: Math.floor(Math.random() * 3),
+      economy: (Math.random() * 4 + 5).toFixed(2)
+    };
+    
+    // Generate mock recent overs
+    const recentOvers = matchDetail.recentOvers || generateMockRecentOvers(5);
+    
+    // Mock match stats
+    const matchStats = {
+      run_rate: (Math.random() * 3 + 6).toFixed(2),
+      last_wicket: `${battingTeam} Batsman 3 (21 runs)`,
+      last_five_overs: `${Math.floor(Math.random() * 20 + 30)} runs, ${Math.floor(Math.random() * 2)} wickets`,
+      extras: Math.floor(Math.random() * 10)
+    };
+    
+    // Build the response object
+    const liveScoresData = {
+      home_score: matchFromOdds.homeScore || `${Math.floor(Math.random() * 150 + 100)}/${Math.floor(Math.random() * 5)}`,
+      away_score: matchFromOdds.awayScore || `${Math.floor(Math.random() * 150 + 100)}/${Math.floor(Math.random() * 5)}`,
+      current_innings: currentInningsNumber,
+      batting_team: battingTeam,
+      bowling_team: bowlingTeam,
+      current_over: `${Math.floor(Math.random() * 15 + 5)}.${Math.floor(Math.random() * 6)}`,
+      current_batsmen: currentBatsmen,
+      current_bowler: currentBowler,
+      recent_overs: recentOvers,
+      match_stats: matchStats
+    };
+    
+    console.log("✅ [ROUTE SUCCESS] Live scores sent for match:", matchId);
+    res.json(liveScoresData);
+  } catch (error) {
+    console.error("❌ [ROUTE ERROR] Failed to fetch live scores:", error.message);
+    res.status(500).json({ error: "Failed to retrieve live scores" });
+  }
+});
+
+// Helper function to generate mock recent overs
+function generateMockRecentOvers(numberOfOvers) {
+  const overs = [];
+  const possibleBallResults = [0, 1, 2, 3, 4, 6, 'W'];
+  
+  for (let i = 1; i <= numberOfOvers; i++) {
+    const balls = [];
+    let overRuns = 0;
+    
+    for (let j = 0; j < 6; j++) {
+      const ballResult = possibleBallResults[Math.floor(Math.random() * possibleBallResults.length)];
+      balls.push({ runs: ballResult });
+      
+      if (ballResult !== 'W') {
+        overRuns += typeof ballResult === 'number' ? ballResult : 0;
+      }
+    }
+    
+    overs.push({
+      over_number: i,
+      balls: balls,
+      runs: overRuns
+    });
+  }
+  
+  return overs;
+}
 
 // ✅ Save Match to Database (Admin)
 router.post("/matches/save", async (req, res) => {

@@ -10,6 +10,7 @@ import MatchDetailsPage from "./pages/MatchDetailsPage";
 import BettingPage from "./pages/BettingPage";
 import ProfilePage from "./pages/ProfilePage";
 import BetsPage from "./pages/BetsPage";
+import BetDetailPage from "./pages/BetDetailPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import UsersPage from "./pages/UsersPage";
 import CreditRequestsPage from "./pages/CreditsRequestsPage";
@@ -40,6 +41,7 @@ function App() {
             <Route path="/match/:matchId" element={<MatchDetailsPage />} />
             <Route path="/betting/:matchId/*" element={<BettingPage />} />
             <Route path="/bets" element={<BetsPage />} />
+            <Route path="/bet/:betId" element={<BetDetailPage />} />
           </Route>
 
           {/* ✅ Admin Routes */}

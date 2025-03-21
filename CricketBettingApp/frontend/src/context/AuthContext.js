@@ -21,6 +21,22 @@ export const AuthProvider = ({ children }) => {
     return role === 'admin';
   });
 
+  // Add function to update user data
+  const updateUserData = async () => {
+    try {
+      console.log('Updating user data...');
+      const profile = await getProfile();
+      
+      if (profile) {
+        setUser(profile);
+        localStorage.setItem('user', JSON.stringify(profile));
+        console.log('User data updated successfully');
+      }
+    } catch (error) {
+      console.error('Failed to update user data:', error);
+    }
+  };
+
   useEffect(() => {
     const loadUser = async () => {
       try {
@@ -119,7 +135,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, login, logout, updateUserData }}>
       {children}
     </AuthContext.Provider>
   );

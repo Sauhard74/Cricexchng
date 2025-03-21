@@ -1,0 +1,349 @@
+.bets-page-container {
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(135deg, #e6f0f9 0%, #f0f9ff 100%);
+}
+
+.bets-card {
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 1200px;
+  overflow: hidden;
+  padding: 1.5rem;
+}
+
+.bets-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 1rem;
+}
+
+.header-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bets-header h1 {
+  font-size: 1.8rem;
+  color: #1e293b;
+  font-weight: 700;
+  margin: 0;
+}
+
+.sort-control {
+  display: flex;
+  align-items: center;
+}
+
+.sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.5rem 1rem;
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sort-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.sort-btn i {
+  font-size: 0.8rem;
+}
+
+.filter-options {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #f1f5f9;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex: 1;
+  max-width: 120px;
+  text-align: center;
+}
+
+.filter-btn:hover {
+  background-color: #e2e8f0;
+  color: #334155;
+}
+
+.filter-btn.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.bets-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background-color: white;
+  margin-bottom: 20px;
+}
+
+.bets-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+  font-size: 0.95rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  background-color: white;
+}
+
+.bets-table thead {
+  background-color: #1e293b;
+  color: white;
+}
+
+.bets-table th {
+  padding: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 0.8rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.bets-table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.bets-table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.bets-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  background-color: #ffffff !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bets-table tbody tr:nth-child(odd) {
+  background-color: #f8fafc !important;
+}
+
+.bets-table tbody tr:hover {
+  background-color: #e6f2ff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.bets-table td {
+  padding: 1rem;
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.match-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.match-teams {
+  font-weight: 600;
+  color: #0f172a;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.match-date {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+/* Team styling now handled by inline styles via getTeamColorStyle function */
+
+.bet-amount {
+  font-weight: 700;
+  color: #334155;
+}
+
+.bet-status {
+  display: inline-block;
+  padding: 0.4rem 0.8rem;
+  border-radius: 50px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status-won {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.status-lost {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #b45309;
+  font-weight: 700;
+  border: 1px solid #f59e0b;
+}
+
+.no-bets-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: #64748b;
+  text-align: center;
+}
+
+.no-bets-message i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: #94a3b8;
+}
+
+.no-bets-message p {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.show-all-btn {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.show-all-btn:hover {
+  background-color: #2563eb;
+}
+
+.loading-spinner, .error-message {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner i, .error-message i {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  color: #94a3b8;
+}
+
+.loading-spinner p, .error-message p {
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.error-message {
+  color: #ef4444;
+}
+
+.error-message i {
+  color: #ef4444;
+}
+
+.retry-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.retry-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .bets-page-container {
+    padding: 1rem;
+  }
+  
+  .bets-card {
+    padding: 1rem;
+  }
+  
+  .header-top-row {
+    margin-bottom: 0.5rem;
+  }
+  
+  .bets-header h1 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .sort-control {
+    margin-top: 0.5rem;
+    width: 100%;
+  }
+  
+  .sort-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filter-options {
+    width: 100%;
+    justify-content: space-between;
+    overflow-x: auto; /* Allow horizontal scrolling for filters if needed */
+    padding-bottom: 5px; /* Add space for scrollbar */
+  }
+  
+  .filter-btn {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    min-width: 80px;
+    max-width: none;
+  }
+  
+  .bets-table th, .bets-table td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Override any other background styles that might be interfering */
+.bets-card, .bets-table-container, .bets-table, .bets-table tbody, .bets-table tr, .bets-table td {
+  background-color: transparent;
+} 

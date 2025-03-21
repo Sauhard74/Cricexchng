@@ -165,10 +165,12 @@
 .match-teams {
   display: flex;
   justify-content: space-between;
-  align-items: stretch;
+  align-items: center;
   margin-bottom: 15px;
-  gap: 15px;
-  height: 100px;
+  gap: 10px;
+  height: auto;
+  min-height: 100px;
+  width: 100%;
 }
 
 .featured-match-card .team,
@@ -177,8 +179,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: space-between;
-  flex: 1;
+  flex: 0 0 45%; /* Fixed width */
   position: relative;
+  overflow: hidden;
 }
 
 .featured-match-card .team {
@@ -189,10 +192,13 @@
 .featured-match-card .vs,
 .match-teams .vs {
   flex: 0 0 auto;
-  width: 40px;
+  width: 10%;
   text-align: center;
   font-weight: 700;
   align-self: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .featured-match-card .vs {
@@ -209,25 +215,38 @@
 
 .featured-match-card .team-name,
 .match-teams .team-name {
-  width: 100%;
-  height: 40px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   border-radius: 4px;
-  padding: 5px 10px;
-  box-sizing: border-box;
-  margin: 0 0 15px 0;
-  font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+  letter-spacing: 0.5px;
+  margin-bottom: 12px !important;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.featured-match-card .team-odds,
+.featured-match-card .team-odds {
+  display: block;
+  width: 60px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  border-radius: 15px;
+  font-weight: 800;
+  margin-top: 10px;
+  background-color: rgba(255, 255, 255, 0.3);
+  font-size: 1.1rem;
+  color: #ff8800;
+  text-shadow: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
 .match-teams .team-odds {
   display: block;
   width: 60px;
@@ -236,18 +255,12 @@
   text-align: center;
   border-radius: 15px;
   font-weight: 700;
-  margin-top: auto;
-}
-
-.featured-match-card .team-odds {
-  background-color: rgba(255, 255, 255, 0.1);
-  font-size: 1rem;
-}
-
-.match-teams .team-odds {
+  margin-top: 10px;
   background-color: #f8f9fa;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: #ff6b00;
+  text-shadow: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .featured-match-card .match-meta {
@@ -410,19 +423,22 @@
 /* Filter Bar */
 .filter-bar {
   display: flex;
-  gap: 15px;
+  gap: 10px;
   margin-bottom: 20px;
   padding: 0 20px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 
 .filter-bar input,
 .filter-bar select {
+  flex: 1;
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 5px;
   font-size: 0.9rem;
-  min-width: 150px;
+  min-width: 0;
+  max-width: none;
 }
 
 .filter-bar input:focus,
@@ -432,18 +448,27 @@
 }
 
 .filter-reset {
-  background-color: #6c757d;
+  background-color: #007bff;
   color: white;
   border: none;
-  padding: 8px 12px;
-  border-radius: 5px;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  line-height: 18px;
+  border-radius: 50%;
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 14px;
   transition: background-color 0.3s;
+  text-align: center;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 5px;
 }
 
 .filter-reset:hover {
-  background-color: #5a6268;
+  background-color: #0069d9;
 }
 
 /* Loading and Error */
@@ -545,18 +570,18 @@
 .match-teams .team-name {
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 5px;
-  color: #333;
-  width: 100%;
-  text-align: center;
+  justify-content: flex-start;
+  text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 5px;
+  color: #000000 !important;
+  width: 100%;
   height: 30px;
-  padding: 8px 5px !important;
+  padding: 8px 8px !important;
   box-sizing: border-box;
 }
 
@@ -769,6 +794,24 @@
     flex-direction: column;
     align-items: center;
   }
+  
+  .filter-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 8px; /* space for scrollbar */
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  
+  .filter-bar input,
+  .filter-bar select {
+    min-width: 130px;
+    flex: 0 0 auto;
+  }
+  
+  .filter-reset {
+    margin-left: 5px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -800,25 +843,45 @@
   .last-update {
     margin-top: 5px;
   }
+  
+  .filter-bar {
+    justify-content: space-between;
+    padding-bottom: 10px;
+  }
+  
+  .filter-bar input,
+  .filter-bar select {
+    min-width: 120px;
+    font-size: 0.8rem;
+    padding: 6px 8px;
+  }
 }
 
-/* Enhanced team visuals with 3D effects */
-.featured-match-card .team-name,
+/* Featured match card specific styles for team names */
+.featured-match-card .team-name {
+  font-size: 1.2rem;
+  text-shadow: none;
+  background-color: inherit; /* Use the team's own background color */
+  color: #000000 !important; /* Force black text */
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1), 0 3px 5px rgba(0, 0, 0, 0.3);
+  height: 40px;
+  justify-content: center !important; /* Center the text */
+  text-align: center !important; /* Center the text */
+  padding: 8px 5px !important; /* Equal padding on all sides */
+  width: 100%;
+  min-width: 0;
+}
+
+/* Match list specific styles for team names */
 .match-teams .team-name {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  border-radius: 4px;
-  transition: all 0.3s ease;
-  position: relative;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-  border: 1px solid rgba(255,255,255,0.1);
-  letter-spacing: 0.5px;
-  margin-bottom: 12px !important;
+  font-size: 1rem;
+  font-weight: 600;
+  height: 30px;
+  padding: 8px 8px !important;
+  color: #000000 !important;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
 }
 
 /* --- TEAM HOVER EFFECTS --- */
@@ -834,12 +897,12 @@
 
 @keyframes team-pulse {
   0% {
-    text-shadow: 0 0 5px currentColor;
+    text-shadow: none;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
   }
   100% {
-    text-shadow: 0 0 15px currentColor, 0 0 20px currentColor;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.4), 0 0 15px currentColor;
+    text-shadow: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   }
 }
 
@@ -861,73 +924,73 @@
 
 /* Team color styles for royal-challengers-bangalore */
 .team-royal-challengers-bangalore .team-name {
-  color: #ff0000;
-  text-shadow: 0 0 5px rgba(255, 0, 0, 0.7);
-  background-color: rgba(255, 0, 0, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #ff0000 !important;
 }
 
 /* Team color styles for chennai-super-kings */
 .team-chennai-super-kings .team-name {
-  color: #ffcc00;
-  text-shadow: 0 0 5px rgba(255, 204, 0, 0.7);
-  background-color: rgba(255, 204, 0, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #ffcc00 !important;
 }
 
 /* Team color styles for kolkata-knight-riders */
 .team-kolkata-knight-riders .team-name {
-  color: #7b3fe4;
-  text-shadow: 0 0 5px rgba(123, 63, 228, 0.7);
-  background-color: rgba(123, 63, 228, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #7b3fe4 !important;
 }
 
 /* Team color styles for mumbai-indians */
 .team-mumbai-indians .team-name {
-  color: #0066cc;
-  text-shadow: 0 0 5px rgba(0, 102, 204, 0.7);
-  background-color: rgba(0, 102, 204, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #0066cc !important;
 }
 
 /* Team color styles for lucknow-super-giants */
 .team-lucknow-super-giants .team-name {
-  color: #00bfff;
-  text-shadow: 0 0 5px rgba(0, 191, 255, 0.7);
-  background-color: rgba(0, 191, 255, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #00bfff !important;
 }
 
 /* Team color styles for gujarat-titans */
 .team-gujarat-titans .team-name {
-  color: #566573;
-  text-shadow: 0 0 5px rgba(86, 101, 115, 0.7);
-  background-color: rgba(86, 101, 115, 0.1);
-  background-image: linear-gradient(45deg, rgba(86, 101, 115, 0.2), rgba(0, 102, 204, 0.2));
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #566573 !important;
+  background-image: none;
 }
 
 /* Team color styles for delhi-capitals */
 .team-delhi-capitals .team-name {
-  color: #0078bc;
-  text-shadow: 0 0 5px rgba(0, 120, 188, 0.7);
-  background-color: rgba(0, 120, 188, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #0078bc !important;
 }
 
 /* Team color styles for rajasthan-royals */
 .team-rajasthan-royals .team-name {
-  color: #ff69b4;
-  text-shadow: 0 0 5px rgba(255, 105, 180, 0.7);
-  background-color: rgba(255, 105, 180, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #ff69b4 !important;
 }
 
 /* Team color styles for sunrisers-hyderabad */
 .team-sunrisers-hyderabad .team-name {
-  color: #ff8c00;
-  text-shadow: 0 0 5px rgba(255, 140, 0, 0.7);
-  background-color: rgba(255, 140, 0, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #ff8c00 !important;
 }
 
 /* Team color styles for punjab-kings */
 .team-punjab-kings .team-name {
-  color: #ed1c24;
-  text-shadow: 0 0 5px rgba(237, 28, 36, 0.7);
-  background-color: rgba(237, 28, 36, 0.1);
+  color: #000000 !important;
+  text-shadow: none;
+  background-color: #ed1c24 !important;
 }
 
 /* Enhanced glow animation on hover */
@@ -936,14 +999,15 @@
   animation: team-glow 1.5s infinite alternate;
   transform: scale(1.05);
   cursor: pointer;
+  color: #000000 !important;
 }
 
 @keyframes team-glow {
   0% {
-    text-shadow: 0 0 5px currentColor;
+    text-shadow: none;
   }
   100% {
-    text-shadow: 0 0 15px currentColor, 0 0 20px currentColor;
+    text-shadow: none;
   }
 }
 
@@ -982,10 +1046,19 @@
 .team.team-sunrisers-hyderabad::before { background-color: #ff8c00; }
 .team.team-punjab-kings::before { background-color: #ed1c24; }
 
-/* Featured match card specific styles for team names */
-.featured-match-card .team-name {
-  font-size: 1.2rem;
-  text-shadow: 0 0 10px currentColor, 0 0 15px currentColor;
-  background-color: rgba(0, 0, 0, 0.2); /* Dark background to make colors pop */
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.1), 0 3px 5px rgba(0, 0, 0, 0.3);
+/* Additional rule to ensure all team names have black text */
+.featured-match-card .team .team-name,
+.match-teams .team .team-name {
+  color: #000000 !important;
+}
+
+/* Ensure hover states maintain black text */
+.featured-match-card .team:hover .team-name,
+.match-teams .team:hover .team-name {
+  color: #000000 !important;
+}
+
+/* And force it for all team classes */
+[class*="team-"] .team-name {
+  color: #000000 !important;
 }

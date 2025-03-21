@@ -16,3 +16,17 @@ padding: 0;
   margin: 20px auto;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
 }
+
+/* Team Color Definitions - kept as reference values for the app */
+:root {
+  --rcb-color: #e00000;        /* Royal Challengers Bangalore */
+  --csk-color: #ffcc00;        /* Chennai Super Kings */
+  --kkr-color: #7b3fe4;        /* Kolkata Knight Riders */
+  --mi-color: #004c93;         /* Mumbai Indians */
+  --lsg-color: #00bfff;        /* Lucknow Super Giants */
+  --gt-color: #566573;         /* Gujarat Titans */
+  --dc-color: #0078bc;         /* Delhi Capitals */
+  --rr-color: #ff69b4;         /* Rajasthan Royals */
+  --srh-color: #ff8c00;        /* Sunrisers Hyderabad */
+  --pk-color: #ed1c24;         /* Punjab Kings */
+}

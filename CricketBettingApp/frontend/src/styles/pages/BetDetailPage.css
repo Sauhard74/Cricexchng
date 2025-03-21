@@ -1,0 +1,433 @@
+.bet-detail-container {
+  padding: 2rem;
+  display: flex;
+  justify-content: center;
+  min-height: calc(100vh - 64px);
+  background: linear-gradient(135deg, #e6f0f9 0%, #f0f9ff 100%);
+}
+
+.bet-detail-card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 900px;
+  overflow: hidden;
+}
+
+.bet-detail-header {
+  background-color: #1e293b;
+  color: white;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bet-detail-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #94a3b8;
+  background: none;
+  border: none;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.back-link:hover {
+  color: white;
+}
+
+.bet-detail-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Match Information Section */
+.match-info-section {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.match-info-section h2 {
+  color: #1e293b;
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  font-size: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.match-teams {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.match-teams .team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 1.1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  width: 45%;
+  text-align: center;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.match-teams .team.selected {
+  background-color: #ebf5ff;
+  border: 2px solid #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.match-teams .vs {
+  font-weight: 700;
+  color: #64748b;
+  font-size: 1.2rem;
+}
+
+.your-pick {
+  color: #3b82f6;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background-color: #dbeafe;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.match-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.detail-item i {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.detail-item.winner {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.detail-item.winner i {
+  color: #16a34a;
+}
+
+/* Bet Information Section */
+.bet-info-section {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.bet-info-section h2 {
+  color: #1e293b;
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  font-size: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.bet-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.bet-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.bet-detail-item .label {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+.bet-detail-item .value {
+  color: #1e293b;
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.bet-detail-item .team-name {
+  color: #0369a1;
+}
+
+.bet-detail-item .winnings {
+  color: #16a34a;
+}
+
+.bet-detail-item.status {
+  grid-column: 1 / -1;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.bet-status {
+  display: inline-block;
+  padding: 0.4rem 1.5rem;
+  border-radius: 50px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-won {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.status-lost {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.status-pending {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #f59e0b;
+}
+
+/* Match Result Section */
+.match-result-section {
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+}
+
+.match-result-section h2 {
+  color: #1e293b;
+  margin-top: 0;
+  margin-bottom: 1.2rem;
+  font-size: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.match-result {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.score {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background-color: #ffffff;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  justify-content: space-between;
+}
+
+.score .home-team, .score .away-team {
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+}
+
+.score .home-team {
+  text-align: right;
+}
+
+.score .away-team {
+  text-align: left;
+}
+
+.score .score-value {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 1.2rem;
+  padding: 0 1rem;
+  background-color: #f8fafc;
+  border-radius: 4px;
+}
+
+.winner-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-weight: 700;
+  color: #16a34a;
+  background-color: #dcfce7;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1.1rem;
+}
+
+.winner-display i {
+  color: #16a34a;
+  font-size: 1.25rem;
+}
+
+/* CTA Section */
+.bet-again-section {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.bet-again-button {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  padding: 1rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bet-again-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
+}
+
+/* Loading and Error States */
+.loading-spinner, .error-message {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner i, .error-message i {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  color: #94a3b8;
+}
+
+.loading-spinner p, .error-message p {
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.error-message {
+  color: #ef4444;
+}
+
+.error-message i {
+  color: #ef4444;
+}
+
+.back-button {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: #2563eb;
+  transform: translateY(-2px);
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .bet-detail-container {
+    padding: 1rem;
+  }
+  
+  .bet-detail-content {
+    padding: 1rem;
+  }
+  
+  .match-teams {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .match-teams .team {
+    width: 100%;
+  }
+  
+  .match-teams .vs {
+    margin: 0.5rem 0;
+  }
+  
+  .score {
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+  }
+  
+  .score .home-team, .score .away-team {
+    text-align: center;
+  }
+}
+
+.simple-match-view {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.simple-match-view p {
+  color: #64748b;
+  margin-bottom: 1rem;
+  font-style: italic;
+}
+
+.team-simple {
+  font-size: 1.2rem;
+  padding: 1rem;
+  background-color: #ebf5ff;
+  border-radius: 8px;
+  margin-top: 1rem;
+  border: 2px solid #3b82f6;
+  color: #0369a1;
+}
+
+/* Team styling now handled by inline styles via getTeamColorStyle function */ 

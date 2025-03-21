@@ -1,59 +1,441 @@
 /* ✅ Container Styling */
 .match-details-container {
   padding: 20px;
-  background-image: url('../../../public/cricket-bg.jpg'); /* Ensure path is correct */
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.95)), url('../../../public/cricket-bg.jpg');
   background-size: cover;
   background-position: center;
-  color: #fff; /* White text for better visibility */
+  color: #fff;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); /* Stronger shadow for depth */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
   max-width: 1200px;
   margin: 20px auto;
-  backdrop-filter: blur(8px); /* ✅ Adds a blur effect to make text pop */
 }
 
-/* ✅ Match Info Styling */
-.match-info h2 {
-  font-size: 28px;
-  font-weight: bold;
-  color: #ffcc00; /* Highlighted header */
-  margin-bottom: 12px;
+/* Loading and Error States */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
 }
 
-.match-info p {
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(255, 204, 0, 0.3);
+  border-radius: 50%;
+  border-top-color: #ffcc00;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-spinner p {
+  margin-top: 20px;
   font-size: 18px;
-  margin: 6px 0;
-  color: #fff;
+  color: #ffcc00;
+}
+
+.error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  padding: 30px;
+  text-align: center;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.error-message p {
+  font-size: 18px;
+  color: #f88;
+}
+
+/* Match Header - New Design */
+.match-header {
+  background-color: rgba(0, 0, 0, 0.7);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Add pulse effect for live matches */
+.match-header::before {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255, 77, 77, 0.2) 0%, rgba(255, 77, 77, 0) 70%);
+  transform: scale(0.9);
+  animation: pulse-header 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  opacity: 0;
+}
+
+/* Only show pulse for live matches */
+.status-in_play ~ .match-header::before,
+.status-started ~ .match-header::before {
+  opacity: 1;
+}
+
+@keyframes pulse-header {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  70% {
+    transform: scale(1.05);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Status indicator animations */
+.status-in_play, .status-started {
+  background-color: #ff4d4d;
+  color: white;
+  animation: pulse 1.5s infinite;
+  position: relative;
+}
+
+/* Add a dot for live indicator */
+.status-in_play::before, .status-started::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #fff;
+  border-radius: 50%;
+  margin-right: 5px;
+  animation: blink 1s ease-in-out infinite alternate;
+}
+
+@keyframes blink {
+  from { opacity: 0.5; }
+  to { opacity: 1; }
+}
+
+.match-teams-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.team-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 40%;
+  position: relative;
+}
+
+.team-header h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.team-score {
+  font-size: 32px;
+  font-weight: bold;
+  color: #ffcc00;
+  margin-bottom: 8px;
+}
+
+/* Team odds badge styling */
+.team-odds-badge {
+  background-color: rgba(255, 204, 0, 0.2);
+  border: 1px solid #ffcc00;
+  color: #ffcc00;
+  font-weight: bold;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 14px;
+  display: inline-block;
+  margin-top: 5px;
+}
+
+.match-status-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.status-not_started, .status-scheduled, .status-Pending, .status-pending {
+  background-color: #4d79ff;
+  color: white;
+}
+
+.status-closed, .status-finished {
+  background-color: #4dff4d;
+  color: black;
+}
+
+.vs-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #aaa;
+  margin: 5px 0;
+}
+
+.match-meta-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  flex: 1;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.meta-icon {
+  font-size: 16px;
+}
+
+.meta-item.winner {
+  background-color: rgba(255, 204, 0, 0.2);
+  border: 1px solid rgba(255, 204, 0, 0.3);
+  color: #ffcc00;
+}
+
+/* Live Match Info */
+.live-match-info {
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.current-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.batting-team h3, .bowling-team h3, .current-over h3 {
+  font-size: 16px;
+  color: #aaa;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.current-batsmen {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.batsman {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+}
+
+.batsman.on-strike {
+  background-color: rgba(255, 204, 0, 0.2);
+  border-left: 3px solid #ffcc00;
+}
+
+.batsman .name {
+  font-weight: bold;
+}
+
+.batsman .runs {
+  color: #ffcc00;
+}
+
+.batsman .striker {
+  color: #ffcc00;
+  font-size: 16px;
+  margin-left: 5px;
+}
+
+.current-bowler {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+}
+
+.current-bowler .name {
+  font-weight: bold;
+}
+
+.current-bowler .figures {
+  color: #ffcc00;
+}
+
+.recent-balls {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ball {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 30px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.ball-0 {
+  background-color: #f8f9fa;
+  color: #343a40;
+}
+
+.ball-1 {
+  background-color: #4d79ff;
+  color: white;
+}
+
+.ball-2 {
+  background-color: #43aa8b;
+  color: white;
+}
+
+.ball-3 {
+  background-color: #f8961e;
+  color: white;
+}
+
+.ball-4 {
+  background-color: #90be6d;
+  color: white;
+}
+
+.ball-6 {
+  background-color: #f94144;
+  color: white;
+}
+
+.ball-W {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+.match-quick-stats {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.stat-pill {
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 20px;
+  padding: 8px 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #aaa;
+  font-weight: bold;
+}
+
+.stat-value {
+  font-size: 16px;
+  color: #ffcc00;
+  font-weight: bold;
 }
 
 /* ✅ Tabs Styling */
 .tab-container {
   display: flex;
   gap: 10px;
-  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .tab-container button {
   padding: 12px 24px;
-  background-color: rgba(255, 255, 255, 0.1); /* Transparent white */
+  background-color: rgba(0, 0, 0, 0.6);
   color: #ffcc00;
-  border: 1px solid #ffcc00;
-  border-radius: 8px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 4px 4px 0 0;
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: all 0.2s ease;
+  flex: 1;
+  text-align: center;
 }
 
 .tab-container button.active {
-  background-color: #ffcc00;
-  color: #000;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #ffcc00;
+  border-bottom: 2px solid #ffcc00;
   font-weight: bold;
 }
 
 .tab-container button:hover {
-  background-color: #ffd633;
-  color: #000;
+  background-color: rgba(0, 0, 0, 0.8);
 }
 
 /* ✅ Table Styling */
@@ -61,32 +443,49 @@ table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 12px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
-th,
-td {
+th, td {
   padding: 12px;
-  border: 1px solid rgba(255, 255, 255, 0.2); /* Light border for better visibility */
+  border: 1px solid rgba(255, 255, 255, 0.1);
   text-align: center;
 }
 
 th {
-  background-color: #ffcc00;
-  color: #000;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #ffcc00;
   font-weight: bold;
+  text-transform: uppercase;
+  font-size: 14px;
 }
 
 td {
-  background-color: rgba(0, 0, 0, 0.5); /* ✅ Darker background for better contrast */
+  background-color: rgba(0, 0, 0, 0.5);
   color: #fff;
+  font-size: 14px;
 }
 
 tr:nth-child(even) {
-  background-color: rgba(0, 0, 0, 0.7); /* ✅ Alternate row color */
+  background-color: rgba(0, 0, 0, 0.7);
 }
 
 tr:hover {
-  background-color: rgba(255, 204, 0, 0.2); /* ✅ Hover state */
+  background-color: rgba(255, 204, 0, 0.1);
+}
+
+/* Scorecard section styling */
+.scorecard-section {
+  margin-bottom: 30px;
+}
+
+.scorecard-section h3 {
+  font-size: 20px;
+  color: #ffcc00;
+  margin-bottom: 10px;
+  border-left: 4px solid #ffcc00;
+  padding-left: 10px;
 }
 
 /* ✅ Commentary Styling */
@@ -95,28 +494,68 @@ tr:hover {
 }
 
 .commentary-item {
-  padding: 12px;
-  background-color: rgba(0, 0, 0, 0.7);
+  padding: 15px;
+  background-color: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 10px;
   border-radius: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.commentary-item strong {
   color: #ffcc00;
 }
 
 .commentary-item:hover {
-  background-color: rgba(255, 204, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.7);
+  transform: translateY(-2px);
+  transition: all 0.2s ease;
 }
 
 /* ✅ Responsive Fixes */
 @media (max-width: 768px) {
   .match-details-container {
-    padding: 10px;
+    padding: 15px;
+    margin: 10px;
   }
 
-  th,
-  td {
-    font-size: 14px;
-    padding: 6px;
+  .match-teams-display {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .team-header {
+    width: 100%;
+  }
+  
+  .match-status-badge {
+    order: -1;
+    margin-bottom: 10px;
+  }
+  
+  .match-actions-row {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .match-meta-info {
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .meta-item {
+    width: 100%;
+  }
+  
+  .bet-now-button {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .current-info {
+    grid-template-columns: 1fr;
   }
 
   .tab-container {
@@ -125,5 +564,136 @@ tr:hover {
 
   .tab-container button {
     width: 100%;
+    border-radius: 4px;
   }
+  
+  th, td {
+    font-size: 12px;
+    padding: 8px 4px;
+  }
+  
+  .team-score {
+    font-size: 24px;
+  }
+}
+
+/* Smaller mobile devices */
+@media (max-width: 480px) {
+  .match-details-container {
+    padding: 10px;
+    margin: 5px;
+  }
+  
+  .match-header {
+    padding: 15px;
+  }
+  
+  .team-header h2 {
+    font-size: 18px;
+  }
+  
+  .team-score {
+    font-size: 20px;
+  }
+  
+  .team-odds-badge {
+    font-size: 12px;
+    padding: 3px 8px;
+  }
+  
+  .status-indicator {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+  
+  .meta-item {
+    font-size: 12px;
+  }
+  
+  .meta-icon {
+    font-size: 14px;
+  }
+  
+  .ball {
+    width: 25px;
+    height: 25px;
+    line-height: 25px;
+    font-size: 12px;
+  }
+  
+  .batting-team h3, .bowling-team h3, .current-over h3 {
+    font-size: 14px;
+  }
+  
+  .bet-now-button {
+    font-size: 14px;
+    padding: 10px 20px;
+  }
+  
+  .tab-container button {
+    font-size: 14px;
+    padding: 10px;
+  }
+  
+  th, td {
+    font-size: 10px;
+    padding: 6px 3px;
+  }
+}
+
+/* Match actions row */
+.match-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+/* Bet now button styling */
+.bet-now-button {
+  background-color: #ffcc00;
+  color: #000;
+  font-weight: bold;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 30px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  min-width: 150px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  position: relative;
+  overflow: hidden;
+}
+
+.bet-now-button:hover {
+  background-color: #ffd633;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.bet-now-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Add a subtle animation effect */
+.bet-now-button::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+  transform: translateX(-100%);
+  transition: transform 0.6s ease;
+}
+
+.bet-now-button:hover::after {
+  transform: translateX(100%);
 }

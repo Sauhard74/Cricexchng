@@ -174,8 +174,20 @@ const HomePage = () => {
     }
     
     if (date) {
-      const matchDate = new Date(match.scheduled).toISOString().split('T')[0];
-      matchesDate = matchDate === date;
+      // Create a date object from the match's scheduled time
+      const matchDateObj = new Date(match.scheduled);
+      
+      // Format the match date in YYYY-MM-DD format in local timezone
+      const matchDateFormatted = matchDateObj.toLocaleDateString('en-CA'); // en-CA uses YYYY-MM-DD format
+      
+      // Log for debugging
+      console.log(`Match ${match.id}:
+        - scheduled time: ${match.scheduled}
+        - formatted date: ${matchDateFormatted}
+        - selected date: ${date}
+        - match? ${matchDateFormatted === date}`);
+      
+      matchesDate = matchDateFormatted === date;
     }
     
     return matchesLeague && matchesDate;
@@ -195,10 +207,10 @@ const HomePage = () => {
     
     return {
       [className]: {
-        color: teamColor,
-        textShadow: `0 0 5px ${teamColor}99`, // Add alpha for glow
+        color: "#000000 !important",
+        textShadow: "none",
         fontWeight: 'bold',
-        backgroundColor: `${teamColor}22`, // Very light background
+        backgroundColor: `${teamColor} !important`,
         padding: '3px 8px',
         borderRadius: '4px',
         transition: 'all 0.3s ease'
@@ -220,10 +232,10 @@ const HomePage = () => {
           const className = `.team-with-color-${match.home_team.toLowerCase().replace(/\s+/g, '-')}`;
           cssRules.push(`
             ${className} .team-name {
-              color: ${match.home_team_color};
-              text-shadow: 0 0 5px ${match.home_team_color}99;
+              color: #000000 !important;
+              text-shadow: none;
               font-weight: bold;
-              background-color: ${match.home_team_color}22;
+              background-color: ${match.home_team_color} !important;
               padding: 3px 8px;
               border-radius: 4px;
               transition: all 0.3s ease;
@@ -231,6 +243,8 @@ const HomePage = () => {
             ${className}:hover .team-name {
               animation: team-pulse 1.5s infinite alternate ease-in-out;
               transform: translateY(-2px);
+              color: #000000 !important;
+              background-color: ${match.home_team_color} !important;
             }
             ${className}::before {
               background-color: ${match.home_team_color};
@@ -242,10 +256,10 @@ const HomePage = () => {
           const className = `.team-with-color-${match.away_team.toLowerCase().replace(/\s+/g, '-')}`;
           cssRules.push(`
             ${className} .team-name {
-              color: ${match.away_team_color};
-              text-shadow: 0 0 5px ${match.away_team_color}99;
+              color: #000000 !important;
+              text-shadow: none;
               font-weight: bold;
-              background-color: ${match.away_team_color}22;
+              background-color: ${match.away_team_color} !important;
               padding: 3px 8px;
               border-radius: 4px;
               transition: all 0.3s ease;
@@ -253,6 +267,8 @@ const HomePage = () => {
             ${className}:hover .team-name {
               animation: team-pulse 1.5s infinite alternate ease-in-out;
               transform: translateY(-2px);
+              color: #000000 !important;
+              background-color: ${match.away_team_color} !important;
             }
             ${className}::before {
               background-color: ${match.away_team_color};
@@ -327,31 +343,6 @@ const HomePage = () => {
         </section>
       )}
 
-      {/* Promotions Section */}
-      <section className="promotions-section">
-        <div className="promo-card">
-          <div className="promo-content">
-            <h3>Welcome Bonus</h3>
-            <p>Get 100% bonus on your first deposit up to ₹5000</p>
-            <button onClick={() => navigate('/register')}>Claim Now</button>
-          </div>
-        </div>
-        <div className="promo-card">
-          <div className="promo-content">
-            <h3>Refer & Earn</h3>
-            <p>Invite friends and get ₹500 for each referral</p>
-            <button onClick={() => navigate(isAuthenticated ? '/profile' : '/register')}>Invite Friends</button>
-          </div>
-        </div>
-        <div className="promo-card">
-          <div className="promo-content">
-            <h3>IPL Special</h3>
-            <p>Enhanced odds on all IPL matches</p>
-            <button onClick={() => setActiveTab('upcoming')}>View Matches</button>
-          </div>
-        </div>
-      </section>
-
       {/* Main Matches Section */}
       <section className="main-matches-section">
         <div className="section-header">
@@ -386,7 +377,20 @@ const HomePage = () => {
           <input
             type="date"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              const selectedDate = e.target.value;
+              console.log('Raw selected date:', selectedDate);
+              
+              // Ensure the date is in the expected YYYY-MM-DD format for backend
+              if (selectedDate) {
+                // Create a date object from the input value (which is already in YYYY-MM-DD format)
+                // The input element uses the user's local timezone by default
+                setDate(selectedDate);
+                console.log('Set date filter to:', selectedDate);
+              } else {
+                setDate('');
+              }
+            }}
             placeholder="Select Date"
           />
           <select value={league} onChange={(e) => setLeague(e.target.value)}>
@@ -402,7 +406,7 @@ const HomePage = () => {
               setDate('');
             }}
           >
-            Reset Filters
+            X
           </button>
         </div>
 
@@ -499,22 +503,6 @@ const HomePage = () => {
               </div>
             )
           )}
-        </div>
-      </section>
-
-      {/* Download App Section */}
-      <section className="download-app-section">
-        <div className="download-content">
-          <h2>Download Our Mobile App</h2>
-          <p>Get the ultimate betting experience on your mobile device</p>
-          <div className="download-buttons">
-            <button className="app-store-button">
-              <i className="icon">📱</i> App Store
-            </button>
-            <button className="play-store-button">
-              <i className="icon">🤖</i> Google Play
-            </button>
-          </div>
         </div>
       </section>
     </div>

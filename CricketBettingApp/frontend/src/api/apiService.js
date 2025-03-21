@@ -35,9 +35,14 @@ export const getLiveMatches = async () => {
 // ✅ Fetch Matches by Date
 export const getMatchesByDate = async (date) => {
   try {
-    console.log('Fetching matches for date:', date);
-    const { data } = await apiClient.get(`/matches/${date}`);
-    console.log('Matches data:', data);
+    console.log('Fetching matches for date (frontend api call):', date);
+    
+    // Format the date correctly (just in case, though the date from the input should already be correct)
+    const formattedDate = date;
+    console.log('Using formatted date for API call:', formattedDate);
+    
+    const { data } = await apiClient.get(`/matches/${formattedDate}`);
+    console.log('Received matches data from API:', data.length, 'matches');
     return data;
   } catch (error) {
     console.error('Failed to fetch matches by date:', error.response?.data?.error || error.message);
@@ -52,6 +57,17 @@ export const getMatchDetails = async (matchId) => {
     return data;
   } catch (error) {
     throw error.response?.data?.error || "Failed to fetch match details";
+  }
+};
+
+// ✅ Fetch Live Scores for a Match
+export const getLiveScores = async (matchId) => {
+  try {
+    const { data } = await apiClient.get(`/match/${matchId}/livescores`);
+    return data;
+  } catch (error) {
+    console.error('Error fetching live scores:', error);
+    throw error.response?.data?.error || "Failed to fetch live scores";
   }
 };
 

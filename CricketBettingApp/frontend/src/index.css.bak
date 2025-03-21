@@ -1,0 +1,163 @@
+body {
+margin: 0;
+padding: 0;
+  font-family: Arial, sans-serif;
+  background-image: url('../public/cricket-bg.jpg');
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: center;
+}
+/* ✅ Overlay to make text readable */
+.main-container {
+  background-color: rgba(255, 255, 255, 0.90); /* Slight transparency */
+  padding: 20px;
+  border-radius: 12px;
+  max-width: 1000px;
+  margin: 20px auto;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Team Color Definitions - kept as reference values for the app */
+:root {
+  --rcb-color: #e00000;        /* Royal Challengers Bangalore */
+  --csk-color: #ffcc00;        /* Chennai Super Kings */
+  --kkr-color: #7b3fe4;        /* Kolkata Knight Riders */
+  --mi-color: #004c93;         /* Mumbai Indians */
+  --lsg-color: #00bfff;        /* Lucknow Super Giants */
+  --gt-color: #566573;         /* Gujarat Titans */
+  --dc-color: #0078bc;         /* Delhi Capitals */
+  --rr-color: #ff69b4;         /* Rajasthan Royals */
+  --srh-color: #ff8c00;        /* Sunrisers Hyderabad */
+  --pk-color: #ed1c24;         /* Punjab Kings */
+}
+
+/* Team Name Base Styles */
+.team-name {
+  font-weight: 700 !important;
+  font-size: 16px !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  text-align: center !important;
+  display: inline-block !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100% !important;
+  transition: all 0.3s ease !important;
+  min-width: 120px !important;
+  border-left: 3px solid transparent !important;
+}
+
+/* Team-specific colors */
+.team-name[data-team*="royal-challengers"],
+.team-name[data-team*="bangalore"],
+.team-name:contains("Royal Challengers"),
+[class*="royal-challengers"] .team-name,
+.team-name:contains("RCB") {
+  background-color: rgba(224, 0, 0, 0.15) !important;
+  color: #b80000 !important;
+  border-left: 3px solid #e00000 !important;
+}
+
+.team-name[data-team*="chennai"],
+.team-name[data-team*="super-kings"],
+.team-name:contains("Chennai Super Kings"),
+[class*="chennai-super"] .team-name,
+.team-name:contains("CSK") {
+  background-color: rgba(255, 204, 0, 0.18) !important;
+  color: #997a00 !important;
+  border-left: 3px solid #ffcc00 !important;
+}
+
+.team-name[data-team*="kolkata"],
+.team-name[data-team*="knight-riders"],
+.team-name:contains("Kolkata Knight Riders"),
+[class*="kolkata-knight"] .team-name,
+.team-name:contains("KKR") {
+  background-color: rgba(123, 63, 228, 0.15) !important;
+  color: #5e2bb5 !important;
+  border-left: 3px solid #7b3fe4 !important;
+}
+
+.team-name[data-team*="mumbai"],
+.team-name[data-team*="indians"],
+.team-name:contains("Mumbai Indians"),
+[class*="mumbai-indians"] .team-name,
+.team-name:contains("MI") {
+  background-color: rgba(0, 76, 147, 0.15) !important;
+  color: #00366c !important;
+  border-left: 3px solid #004c93 !important;
+}
+
+.team-name[data-team*="lucknow"],
+.team-name[data-team*="super-giants"],
+.team-name:contains("Lucknow Super Giants"),
+[class*="lucknow-super"] .team-name,
+.team-name:contains("LSG") {
+  background-color: rgba(0, 191, 255, 0.15) !important;
+  color: #0077c2 !important;
+  border-left: 3px solid #00bfff !important;
+}
+
+.team-name[data-team*="gujarat"],
+.team-name[data-team*="titans"],
+.team-name:contains("Gujarat Titans"),
+[class*="gujarat-titans"] .team-name,
+.team-name:contains("GT") {
+  background-color: rgba(86, 101, 115, 0.15) !important;
+  color: #2c3540 !important;
+  border-left: 3px solid #566573 !important;
+}
+
+.team-name[data-team*="delhi"],
+.team-name[data-team*="capitals"],
+.team-name:contains("Delhi Capitals"),
+[class*="delhi-capitals"] .team-name,
+.team-name:contains("DC") {
+  background-color: rgba(0, 120, 188, 0.15) !important;
+  color: #005a8c !important;
+  border-left: 3px solid #0078bc !important;
+}
+
+.team-name[data-team*="rajasthan"],
+.team-name[data-team*="royals"],
+.team-name:contains("Rajasthan Royals"),
+[class*="rajasthan-royals"] .team-name,
+.team-name:contains("RR") {
+  background-color: rgba(255, 105, 180, 0.15) !important;
+  color: #d4267d !important;
+  border-left: 3px solid #ff69b4 !important;
+}
+
+.team-name[data-team*="sunrisers"],
+.team-name[data-team*="hyderabad"],
+.team-name:contains("Sunrisers Hyderabad"),
+[class*="sunrisers-hyderabad"] .team-name,
+.team-name:contains("SRH") {
+  background-color: rgba(255, 140, 0, 0.15) !important;
+  color: #cc7000 !important;
+  border-left: 3px solid #ff8c00 !important;
+}
+
+.team-name[data-team*="punjab"],
+.team-name[data-team*="kings"],
+.team-name:contains("Punjab Kings"),
+[class*="punjab-kings"] .team-name,
+.team-name:contains("PBKS") {
+  background-color: rgba(237, 28, 36, 0.15) !important;
+  color: #bb1219 !important;
+  border-left: 3px solid #ed1c24 !important;
+}
+
+/* Dark background override - for featured match cards with dark backgrounds */
+.featured-match-card .team-name {
+  color: #ffffff !important;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Hover effects */
+.team-name:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  opacity: 0.9 !important;
+}

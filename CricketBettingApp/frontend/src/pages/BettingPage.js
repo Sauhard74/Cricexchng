@@ -251,140 +251,173 @@ const BettingPage = () => {
 
   return (
     <div className="betting-page">
-      {/* Match Details */}
+      {/* Match Details Header */}
       <div className="match-header">
-        <h2>🏏 {matchDetails.home_team} vs {matchDetails.away_team}</h2>
-        <p className="match-date">📅 {formatMatchDate(matchDetails.scheduled)}</p>
-        <p className="match-venue">📍 {matchDetails.venue || 'TBD'}</p>
-      </div>
-      
-      {/* User Credits */}
-      <div className="user-credits">
-        <p>💰 Your Credits: <strong>{userCredits}</strong></p>
-      </div>
-      
-      {/* Bookmaker Info */}
-      <div className="bookmaker-info">
-        <p>📊 Odds provided by: <strong>{matchDetails.bookmaker}</strong></p>
-        <p>⏰ Last updated: <strong>{lastUpdate.toLocaleTimeString()}</strong></p>
-      </div>
-
-      {/* Current Odds */}
-      <div className="odds-container">
-        <h3>Select Team to Bet On:</h3>
-        <div className="team-odds-boxes">
-          <div
-            className={`odds-box ${team === matchDetails.home_team ? 'selected' : ''}`}
-            onClick={() => setTeam(matchDetails.home_team)}
-          >
-            <span className="team-name">{matchDetails.home_team}</span>
-            <span className="odds-value">
-              {typeof matchDetails.home_odds === 'number' 
-                ? matchDetails.home_odds.toFixed(2) 
-                : parseFloat(matchDetails.home_odds || 0).toFixed(2)}
-            </span>
-          </div>
-          <div
-            className={`odds-box ${team === matchDetails.away_team ? 'selected' : ''}`}
-            onClick={() => setTeam(matchDetails.away_team)}
-          >
-            <span className="team-name">{matchDetails.away_team}</span>
-            <span className="odds-value">
-              {typeof matchDetails.away_odds === 'number' 
-                ? matchDetails.away_odds.toFixed(2) 
-                : parseFloat(matchDetails.away_odds || 0).toFixed(2)}
-            </span>
-          </div>
+        <h2>{matchDetails.home_team} vs {matchDetails.away_team}</h2>
+        <div className="match-info">
+          <p className="match-date">
+            <i className="fas fa-calendar-alt"></i> {formatMatchDate(matchDetails.scheduled)}
+          </p>
+          <p className="match-venue">
+            <i className="fas fa-map-marker-alt"></i> {matchDetails.venue || 'Venue TBD'}
+          </p>
         </div>
       </div>
-
-      {/* Bet Type */}
-      <div className="bet-type-section">
-        <h3>💰 Bet Type:</h3>
-        <div className="bet-type-options">
-          <label className={`bet-type-option ${betType === 'winner' ? 'selected' : ''}`}>
-            <input
-              type="radio"
-              name="betType"
-              value="winner"
-              checked={betType === 'winner'}
-              onChange={(e) => setBetType(e.target.value)}
-            />
-            Match Winner
-          </label>
-          <label className={`bet-type-option ${betType === 'runs' ? 'selected' : ''}`}>
-            <input
-              type="radio"
-              name="betType"
-              value="runs"
-              checked={betType === 'runs'}
-              onChange={(e) => setBetType(e.target.value)}
-            />
-            Total Runs
-          </label>
-          <label className={`bet-type-option ${betType === 'wickets' ? 'selected' : ''}`}>
-            <input
-              type="radio"
-              name="betType"
-              value="wickets"
-              checked={betType === 'wickets'}
-              onChange={(e) => setBetType(e.target.value)}
-            />
-            Total Wickets
-          </label>
+      
+      <div className="betting-page-content">
+        {/* User Credits */}
+        <div className="user-credits">
+          <p>Available Balance</p>
+          <p><strong>{userCredits.toLocaleString()}</strong></p>
         </div>
-      </div>
+        
+        {/* Bookmaker Info */}
+        <div className="bookmaker-info">
+          <p><i className="fas fa-chart-line"></i> Odds by <strong>{matchDetails.bookmaker}</strong></p>
+          <p><i className="fas fa-sync-alt"></i> Updated <strong>{lastUpdate.toLocaleTimeString()}</strong></p>
+        </div>
 
-      {/* Prediction Value */}
-      {betType !== 'winner' && (
-        <div className="prediction-input">
-          <h3>🔹 {betType === 'runs' ? 'Predict Total Runs:' : 'Predict Total Wickets:'}</h3>
+        {/* Current Odds */}
+        <div className="odds-container">
+          <h3><i className="fas fa-trophy"></i> Select Team to Bet On</h3>
+          <div className="team-odds-boxes">
+            <div
+              className={`odds-box ${team === matchDetails.home_team ? 'selected' : ''}`}
+              onClick={() => setTeam(matchDetails.home_team)}
+            >
+              <span className="team-name">{matchDetails.home_team}</span>
+              <span className="odds-value">
+                {typeof matchDetails.home_odds === 'number' 
+                  ? matchDetails.home_odds.toFixed(2) 
+                  : parseFloat(matchDetails.home_odds || 0).toFixed(2)}
+              </span>
+            </div>
+            <div
+              className={`odds-box ${team === matchDetails.away_team ? 'selected' : ''}`}
+              onClick={() => setTeam(matchDetails.away_team)}
+            >
+              <span className="team-name">{matchDetails.away_team}</span>
+              <span className="odds-value">
+                {typeof matchDetails.away_odds === 'number' 
+                  ? matchDetails.away_odds.toFixed(2) 
+                  : parseFloat(matchDetails.away_odds || 0).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bet Type */}
+        <div className="bet-type-section">
+          <h3><i className="fas fa-dice"></i> Bet Type</h3>
+          <div className="bet-type-options">
+            <label className={`bet-type-option ${betType === 'winner' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="betType"
+                value="winner"
+                checked={betType === 'winner'}
+                onChange={(e) => setBetType(e.target.value)}
+              />
+              Match Winner
+            </label>
+            <label className={`bet-type-option ${betType === 'runs' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="betType"
+                value="runs"
+                checked={betType === 'runs'}
+                onChange={(e) => setBetType(e.target.value)}
+              />
+              Total Runs
+            </label>
+            <label className={`bet-type-option ${betType === 'wickets' ? 'selected' : ''}`}>
+              <input
+                type="radio"
+                name="betType"
+                value="wickets"
+                checked={betType === 'wickets'}
+                onChange={(e) => setBetType(e.target.value)}
+              />
+              Total Wickets
+            </label>
+          </div>
+        </div>
+
+        {/* Prediction Value */}
+        {betType !== 'winner' && (
+          <div className="prediction-input">
+            <h3>
+              <i className="fas fa-chart-bar"></i> 
+              {betType === 'runs' ? 'Predict Total Runs' : 'Predict Total Wickets'}
+            </h3>
+            <input
+              type="number"
+              value={predictionValue}
+              onChange={(e) => setPredictionValue(e.target.value)}
+              placeholder={betType === 'runs' ? 'Enter runs' : 'Enter wickets'}
+              min="0"
+            />
+          </div>
+        )}
+
+        {/* Amount */}
+        <div className="bet-amount-section">
+          <h3><i className="fas fa-coins"></i> Bet Amount</h3>
           <input
             type="number"
-            value={predictionValue}
-            onChange={(e) => setPredictionValue(e.target.value)}
-            placeholder={betType === 'runs' ? 'Enter runs' : 'Enter wickets'}
-            min="0"
+            value={amount}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value);
+              if (!isNaN(value) && value >= 0) {
+                if (value <= userCredits) {
+                  setAmount(e.target.value);
+                } else {
+                  alert('Amount cannot exceed available credits');
+                }
+              } else if (e.target.value === '') {
+                setAmount('');
+              }
+            }}
+            placeholder="Enter amount"
+            min="1"
+            max={userCredits}
           />
+          
+          <div className="bet-amount-quick-options">
+            <button onClick={() => setAmount('100')}>₹100</button>
+            <button onClick={() => setAmount('500')}>₹500</button>
+            <button onClick={() => setAmount('1000')}>₹1000</button>
+            <button onClick={() => setAmount(userCredits.toString())}>Max</button>
+          </div>
         </div>
-      )}
 
-      {/* Amount */}
-      <div className="bet-amount-section">
-        <h3>💵 Bet Amount:</h3>
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => {
-            const value = parseFloat(e.target.value);
-            if (value <= userCredits) {
-              setAmount(e.target.value);
-            } else {
-              alert('Amount cannot exceed available credits');
-            }
-          }}
-          placeholder="Enter amount"
-          min="1"
-          max={userCredits}
-        />
+        {/* Potential Winnings */}
+        {potentialWinnings > 0 && (
+          <div className="potential-winnings">
+            <h3>Potential Winnings</h3>
+            <p className="winnings-amount">{potentialWinnings}</p>
+          </div>
+        )}
+
+        {/* Place Bet Button */}
+        <button 
+          className="place-bet-button"
+          onClick={handleOpenConfirmation}
+          disabled={!amount || !team || parseFloat(amount) > userCredits || parseFloat(amount) <= 0}
+        >
+          Place Bet
+        </button>
+        
+        {/* Betting Tips */}
+        <div className="betting-tips">
+          <h4><i className="fas fa-lightbulb"></i> Betting Tips</h4>
+          <ul>
+            <li>Odds reflect the probability of an outcome</li>
+            <li>Higher odds mean higher potential returns</li>
+            <li>Always bet responsibly and within your limits</li>
+          </ul>
+        </div>
       </div>
-
-      {/* Potential Winnings */}
-      {potentialWinnings > 0 && (
-        <div className="potential-winnings">
-          <h3>🏆 Potential Winnings:</h3>
-          <p className="winnings-amount">{potentialWinnings}</p>
-        </div>
-      )}
-
-      {/* Place Bet Button */}
-      <button 
-        className="place-bet-button"
-        onClick={handlePlaceBet}
-        disabled={!amount || !team || parseFloat(amount) > userCredits}
-      >
-        Place Bet
-      </button>
 
       {/* Bet Confirmation Modal */}
       {showConfirmation && (
