@@ -40,11 +40,8 @@ const BettingPage = () => {
   const [betType, setBetType] = useState('winner');
   const [predictionValue, setPredictionValue] = useState('');
   const [team, setTeam] = useState('');
-const [odds, setOdds] = useState(null);
-const [selectedBackLay, setSelectedBackLay] = useState(null);
-
-
-
+  const [odds, setOdds] = useState(null);
+  const [selectedBackLay, setSelectedBackLay] = useState(null);
 
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(true);
@@ -145,7 +142,6 @@ const [selectedBackLay, setSelectedBackLay] = useState(null);
     };
   }, [matchId, preferredBookmaker]);
 
-
   // Handle Selection for Back and Lay
   const handleSelectBet = (selectedTeam, selectedOdds, type) => {
     setTeam(selectedTeam);
@@ -162,29 +158,35 @@ const [selectedBackLay, setSelectedBackLay] = useState(null);
 };
 
 const calculatePotentialWinnings = (backLay, odds) => {
-  if (!amount || !odds) {
+  if (!amount || amount === '' || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       setPotentialWinnings(0);
       return;
   }
 
+  const betAmount = parseFloat(amount);
+  
   if (backLay) {
       if (backLay.type === 'back') {
-          // Correct calculation for back bet
-          const potential = parseFloat(amount) * backLay.odds;
-          setPotentialWinnings(potential.toFixed(2));
+          // For back bet - potential profit = stake * (odds - 1)
+          const profit = betAmount * (parseFloat(backLay.odds) - 1);
+          setPotentialWinnings(profit.toFixed(2));
       } else if (backLay.type === 'lay') {
-          // Correct calculation for lay bet (including stake subtraction)
-          const potential = (parseFloat(amount) * backLay.odds) - parseFloat(amount);
-          setPotentialWinnings(potential.toFixed(2));
+          // For lay bet:
+          // - Potential profit = stake (what you can win)
+          // - Liability = stake * (odds - 1) (what you can lose)
+          setPotentialWinnings(betAmount.toFixed(2));
       }
-  } else {
-      if (betType === 'back') {
-          const potential = parseFloat(amount) * odds;
-          setPotentialWinnings(potential.toFixed(2));
-      } else if (betType === 'lay') {
-          const potential = (parseFloat(amount) * odds) - parseFloat(amount);
-          setPotentialWinnings(potential.toFixed(2));
+  } else if (betType === 'winner') {
+      // Standard match winner bet - potential profit = stake * (odds - 1)
+      const selectedOdds = parseFloat(odds);
+      if (!isNaN(selectedOdds)) {
+          const profit = betAmount * (selectedOdds - 1);
+          setPotentialWinnings(profit.toFixed(2));
       }
+  } else if (betType === 'runs' || betType === 'wickets') {
+      // Standard profit calculation for prediction bets
+      const profit = betAmount * 1.9; // Typically prediction bets pay 1.9x stake
+      setPotentialWinnings(profit.toFixed(2));
   }
 };
 
@@ -192,38 +194,39 @@ const calculatePotentialWinnings = (backLay, odds) => {
 useEffect(() => {
   calculatePotentialWinnings(selectedBackLay, odds);
 }, [odds, amount, betType, selectedBackLay]);
-  useEffect(() => {
-    if (!matchDetails || !team || !amount) {
+
+useEffect(() => {
+  if (!matchDetails || !team || !amount || amount === '' || isNaN(parseFloat(amount))) {
+    setPotentialWinnings(0);
+    return;
+  }
+
+  try {
+    // Get the odds for the selected team
+    let odds = team === matchDetails.home_team 
+      ? matchDetails.home_odds 
+      : matchDetails.away_odds;
+    
+    // Ensure odds is a number
+    odds = parseFloat(odds);
+    
+    // Check if odds is a valid number
+    if (isNaN(odds)) {
+      console.error('Invalid odds value:', odds);
       setPotentialWinnings(0);
       return;
     }
-
-    try {
-      // Get the odds for the selected team
-      let odds = team === matchDetails.home_team 
-        ? matchDetails.home_odds 
-        : matchDetails.away_odds;
-      
-      // Ensure odds is a number
-      odds = parseFloat(odds);
-      
-      // Check if odds is a valid number
-      if (isNaN(odds)) {
-        console.error('Invalid odds value:', odds);
-        setPotentialWinnings(0);
-        return;
-      }
-      
-      // Calculate winnings
-      const winnings = betType === 'lay'
-  ? parseFloat(amount) * (odds - 1)  // Liability calculation for Lay
-  : parseFloat(amount) * odds;
-      setPotentialWinnings(winnings.toFixed(2));
-    } catch (error) {
-      console.error('Error calculating potential winnings:', error);
-      setPotentialWinnings(0);
-    }
-  }, [team, amount, matchDetails]);
+    
+    // Calculate winnings
+    const winnings = betType === 'lay'
+? parseFloat(amount) * (odds - 1)  // Liability calculation for Lay
+: parseFloat(amount) * odds;
+    setPotentialWinnings(winnings.toFixed(2));
+  } catch (error) {
+    console.error('Error calculating potential winnings:', error);
+    setPotentialWinnings(0);
+  }
+}, [team, amount, matchDetails]);
 
   // Handle opening the confirmation modal
   const handleOpenConfirmation = () => {
@@ -231,9 +234,68 @@ useEffect(() => {
     setShowConfirmation(true);
   };
 
+  // Handle placing the bet after confirmation
+  const handlePlaceBet = async () => {
+    try {
+      if (!validateBet()) {
+        return;
+      }
+
+      // Create bet data object based on bet type
+      const betData = {
+        matchId: matchId,
+        team,
+        amount: parseFloat(amount)
+      };
+
+      // Add type-specific fields
+      if (selectedBackLay) {
+        // Back/Lay bet
+        betData.betType = selectedBackLay.type;
+        betData.odds = parseFloat(selectedBackLay.odds);
+        
+        // Calculate liability for lay bets
+        if (selectedBackLay.type === 'lay') {
+          betData.liability = parseFloat(amount) * (parseFloat(selectedBackLay.odds) - 1);
+        }
+      } else if (betType === 'runs' || betType === 'wickets') {
+        // Runs/Wickets prediction bet
+        betData.betType = betType;
+        betData.predictionValue = parseFloat(predictionValue);
+      } else {
+        // Standard winner bet
+        betData.betType = 'winner';
+      }
+
+      console.log('Placing bet with data:', betData);
+
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_URL}/api/bet/place`,
+        betData,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update local user credits after successful bet
+      setUserCredits(prev => prev - parseFloat(amount));
+      
+      // Reset form after successful bet
+      setAmount('');
+      setTeam('');
+      setSelectedBackLay(null);
+      setPredictionValue('');
+      
+      alert('Bet placed successfully!');
+      navigate('/'); // Redirect to home page
+    } catch (error) {
+      console.error('Error placing bet:', error);
+      alert(error.response?.data?.error || 'Failed to place bet');
+    }
+  };
+
   // Validate the bet inputs
   const validateBet = () => {
-    if (!amount || parseFloat(amount) <= 0) {
+    if (!amount || amount === '' || parseFloat(amount) <= 0) {
       alert('Please enter a valid bet amount');
       return false;
     }
@@ -248,47 +310,12 @@ useEffect(() => {
       return false;
     }
     
-    if ((betType === 'runs' || betType === 'wickets') && !predictionValue) {
+    if (!selectedBackLay && (betType === 'runs' || betType === 'wickets') && !predictionValue) {
       alert(`Please enter a prediction for ${betType}`);
       return false;
     }
     
     return true;
-  };
-
-  // Handle placing the bet after confirmation
-  const handlePlaceBet = async () => {
-    try {
-      if (!amount || !team) {
-        alert('Please select a team and enter an amount');
-        return;
-      }
-
-      if (parseFloat(amount) > userCredits) {
-        alert('Insufficient credits');
-        return;
-      }
-
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/bet/place`,
-        {
-          matchId: matchId, // Remove the double decoding here as well
-          team,
-          amount: parseFloat(amount),
-          betType: 'winner'
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      // Update local user credits after successful bet
-      setUserCredits(prev => prev - parseFloat(amount));
-      alert('Bet placed successfully!');
-      navigate('/'); // Redirect to home page
-    } catch (error) {
-      console.error('Error placing bet:', error);
-      alert(error.response?.data?.error || 'Failed to place bet');
-    }
   };
 
   if (loading) {
@@ -323,129 +350,126 @@ useEffect(() => {
         <p>⏰ Last updated: <strong>{lastUpdate.toLocaleTimeString()}</strong></p>
       </div>
 
-      {/* Current Odds */}
-
-    {/* 🔥 Back and Lay Table */}
-    <div className="back-lay-table">
-        <table>
-            <thead>
-                <tr>
-                    <th>{matchDetails?.home_team} Back</th>
-                    <th>{matchDetails?.home_team} Lay</th>
-                    <th>{matchDetails?.away_team} Back</th>
-                    <th>{matchDetails?.away_team} Lay</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                <td onClick={() => handleSelectBet(matchDetails.home_team, matchDetails.home_odds, 'back')}>
-                {matchDetails?.home_odds}
-              </td>
-              <td onClick={() => handleSelectBet(matchDetails.home_team, matchDetails.home_odds + 0.1, 'lay')}>
-                {(matchDetails?.home_odds + 0.1).toFixed(2)}
-              </td>
-              <td onClick={() => handleSelectBet(matchDetails.away_team, matchDetails.away_odds, 'back')}>
-                {matchDetails?.away_odds}
-              </td>
-              <td onClick={() => handleSelectBet(matchDetails.away_team, matchDetails.away_odds + 0.1, 'lay')}>
-                {(matchDetails?.away_odds + 0.1).toFixed(2)}
-              </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-    
-
-    {/* 🔥 Back and Lay Table */}
-    <div className="back-lay-table">
-        <div className="odds-row">
-            {/* Back and Lay for Home Team */}
-            <div 
-                className={`odds-box ${team === matchDetails?.home_team && betType === 'back' ? 'selected' : ''}`}
-                onClick={() => {
-        setSelectedBackLay(null);
-        setSelectedBackLay({ team: matchDetails?.home_team, type: 'back', odds: matchDetails?.home_odds });
-        setTeam(matchDetails?.home_team);
-setOdds(matchDetails?.home_odds);
-        setOdds(matchDetails?.home_odds);
-    }}
-            >
-                Back {matchDetails?.home_team}: {matchDetails?.home_odds}
-            </div>
-            <div 
-                className={`odds-box ${team === matchDetails?.home_team && betType === 'lay' ? 'selected' : ''}`}
-                onClick={() => {
-        setSelectedBackLay(null);
-setSelectedBackLay({ team: matchDetails?.home_team, type: 'lay', odds: (matchDetails?.home_odds + 0.1).toFixed(2) });
-setTeam(matchDetails?.home_team);
-setOdds((matchDetails?.home_odds + 0.1).toFixed(2));
-        setOdds((matchDetails?.home_odds + 0.1).toFixed(2));
-    }}
-            >
-                Lay {matchDetails?.home_team}: {(matchDetails?.home_odds + 0.1).toFixed(2)}
-            </div>
-
-            {/* Back and Lay for Away Team */}
-            <div 
-                className={`odds-box ${team === matchDetails?.away_team && betType === 'back' ? 'selected' : ''}`}
-                onClick={() => {
-        setSelectedBackLay(null);
-setSelectedBackLay({ team: matchDetails?.away_team, type: 'back', odds: matchDetails?.away_odds });
-setTeam(matchDetails?.away_team);
-setOdds(matchDetails?.away_odds);
-        setOdds(matchDetails?.away_odds);
-    }}
-            >
-                Back {matchDetails?.away_team}: {matchDetails?.away_odds}
-            </div>
-            <div 
-                className={`odds-box ${team === matchDetails?.away_team && betType === 'lay' ? 'selected' : ''}`}
-                onClick={() => {
-        setSelectedBackLay(null);
-setSelectedBackLay({ team: matchDetails?.away_team, type: 'lay', odds: (matchDetails?.away_odds + 0.1).toFixed(2) });
-setTeam(matchDetails?.away_team);
-setOdds((matchDetails?.away_odds + 0.1).toFixed(2));
-        setOdds((matchDetails?.away_odds + 0.1).toFixed(2));
-    }}
-            >
-                Lay {matchDetails?.away_team}: {(matchDetails?.away_odds + 0.1).toFixed(2)}
-            </div>
-        </div>
-    </div>
-    
-      <div className="odds-container">
-        <h3>Select Team to Bet On:</h3>
-        <div className="team-odds-boxes">
-          <div
-            className={`odds-box ${team === matchDetails.home_team ? 'selected' : ''}`}
-            onClick={() => {
-        if (!selectedBackLay) setTeam(matchDetails.home_team);
-setOdds(matchDetails?.home_odds);;
-    }}
-          >
-            <span className="team-name">{matchDetails.home_team}</span>
-            <span className="odds-value">
-              {typeof matchDetails.home_odds === 'number' 
-                ? matchDetails.home_odds.toFixed(2) 
-                : parseFloat(matchDetails.home_odds || 0).toFixed(2)}
-            </span>
+      {/* Back/Lay Explanation */}
+      <div className="betting-explainer">
+        <h3>Back & Lay Betting Explained</h3>
+        <div className="betting-explanation-grid">
+          <div className="back-explanation-box">
+            <h4>Back Bet</h4>
+            <p>When you "back" a team, you're betting that they <strong>will win</strong>.</p>
+            <p>Example: Back {matchDetails?.home_team} @ {matchDetails?.home_odds}</p>
+            <p>If {matchDetails?.home_team} wins, you win your stake × (odds - 1)</p>
           </div>
-          <div
-            className={`odds-box ${team === matchDetails.away_team ? 'selected' : ''}`}
-            onClick={() => {
-        if (!selectedBackLay) setTeam(matchDetails.away_team);
-setOdds(matchDetails?.away_odds);;
-    }}
-          >
-            <span className="team-name">{matchDetails.away_team}</span>
-            <span className="odds-value">
-              {typeof matchDetails.away_odds === 'number' 
-                ? matchDetails.away_odds.toFixed(2) 
-                : parseFloat(matchDetails.away_odds || 0).toFixed(2)}
-            </span>
+          <div className="lay-explanation-box">
+            <h4>Lay Bet</h4>
+            <p>When you "lay" a team, you're betting that they <strong>will NOT win</strong>.</p>
+            <p>Example: Lay {matchDetails?.home_team} @ {(parseFloat(matchDetails?.home_odds) + 0.1).toFixed(2)}</p>
+            <p>You win your stake if {matchDetails?.home_team} loses, but risk liability (stake × (odds - 1)) if they win.</p>
           </div>
         </div>
       </div>
+
+      {/* Back and Lay Table - Improved with 4 distinct options */}
+      <div className="back-lay-table">
+        <h3>Back/Lay Betting Options</h3>
+        <div className="back-lay-grid">
+            <div className="back-lay-team-header">{matchDetails?.home_team}</div>
+            <div className="back-lay-team-header">{matchDetails?.away_team}</div>
+            
+            {/* First row: Lay home, Back home */}
+            <div className="back-lay-row">
+                <div 
+                    className={`lay-box ${selectedBackLay && selectedBackLay.team === matchDetails.home_team && selectedBackLay.type === 'lay' ? 'selected' : ''}`}
+                    onClick={() => handleSelectBet(matchDetails.home_team, (parseFloat(matchDetails.home_odds) + 0.1).toFixed(2), 'lay')}
+                >
+                    <div className="bet-type-label">Lay</div>
+                    <div className="odds-value">{(parseFloat(matchDetails.home_odds) + 0.1).toFixed(2)}</div>
+                </div>
+                
+                <div 
+                    className={`back-box ${selectedBackLay && selectedBackLay.team === matchDetails.home_team && selectedBackLay.type === 'back' ? 'selected' : ''}`}
+                    onClick={() => handleSelectBet(matchDetails.home_team, matchDetails.home_odds, 'back')}
+                >
+                    <div className="bet-type-label">Back</div>
+                    <div className="odds-value">{matchDetails?.home_odds}</div>
+                </div>
+            </div>
+            
+            {/* Second row: Lay away, Back away */}
+            <div className="back-lay-row">
+                <div 
+                    className={`lay-box ${selectedBackLay && selectedBackLay.team === matchDetails.away_team && selectedBackLay.type === 'lay' ? 'selected' : ''}`}
+                    onClick={() => handleSelectBet(matchDetails.away_team, (parseFloat(matchDetails.away_odds) + 0.1).toFixed(2), 'lay')}
+                >
+                    <div className="bet-type-label">Lay</div>
+                    <div className="odds-value">{(parseFloat(matchDetails.away_odds) + 0.1).toFixed(2)}</div>
+                </div>
+                
+                <div 
+                    className={`back-box ${selectedBackLay && selectedBackLay.team === matchDetails.away_team && selectedBackLay.type === 'back' ? 'selected' : ''}`}
+                    onClick={() => handleSelectBet(matchDetails.away_team, matchDetails.away_odds, 'back')}
+                >
+                    <div className="bet-type-label">Back</div>
+                    <div className="odds-value">{matchDetails?.away_odds}</div>
+                </div>
+            </div>
+        </div>
+        
+        {selectedBackLay && (
+            <div className="selected-bet-info">
+                <p>Selected: <strong>{selectedBackLay.type === 'back' ? 'Back' : 'Lay'} {selectedBackLay.team}</strong> @ <strong>{selectedBackLay.odds}</strong></p>
+                {selectedBackLay.type === 'lay' && (
+                    <p>Liability: <strong>{(parseFloat(amount || 0) * (parseFloat(selectedBackLay.odds) - 1)).toFixed(2)}</strong></p>
+                )}
+            </div>
+        )}
+    </div>
+    
+      {/* Amount */}
+      <div className="bet-amount-section">
+        <h3>💵 Bet Amount:</h3>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => {
+            const inputValue = e.target.value;
+            // Allow empty input (clearing the field)
+            if (inputValue === '') {
+              setAmount('');
+              return;
+            }
+            
+            // Don't parse the value until it's needed for validation
+            // This prevents conversion issues that could change the input
+            if (parseFloat(inputValue) > userCredits) {
+              alert('Amount cannot exceed available credits');
+              return;
+            }
+            
+            // Simply set the input value directly
+            setAmount(inputValue);
+          }}
+          placeholder="Enter amount"
+          min="0"
+          max={userCredits}
+        />
+      </div>
+
+      {/* Potential Winnings */}
+      {amount && potentialWinnings > 0 && (
+        <div className="potential-winnings">
+          <h3>{selectedBackLay && selectedBackLay.type === 'lay' ? '🏆 Potential Profit:' : '🏆 Potential Winnings:'}</h3>
+          <p className="winnings-amount">{potentialWinnings}</p>
+        </div>
+      )}
+      
+      {/* Display Liability for Lay bets */}
+      {selectedBackLay && selectedBackLay.type === 'lay' && amount > 0 && (
+        <div className="potential-liability">
+          <h3>⚠️ Your Liability:</h3>
+          <p className="liability-amount">{(parseFloat(amount) * (parseFloat(selectedBackLay.odds) - 1)).toFixed(2)}</p>
+        </div>
+      )}
 
       {/* Bet Type */}
       <div className="bet-type-section">
@@ -498,39 +522,11 @@ setOdds(matchDetails?.away_odds);;
         </div>
       )}
 
-      {/* Amount */}
-      <div className="bet-amount-section">
-        <h3>💵 Bet Amount:</h3>
-        <input
-          type="number"
-          value={amount}
-          onChange={(e) => {
-            const value = parseFloat(e.target.value);
-            if (value <= userCredits) {
-              setAmount(e.target.value);
-            } else {
-              alert('Amount cannot exceed available credits');
-            }
-          }}
-          placeholder="Enter amount"
-          min="1"
-          max={userCredits}
-        />
-      </div>
-
-      {/* Potential Winnings */}
-      {potentialWinnings > 0 && (
-        <div className="potential-winnings">
-          <h3>🏆 Potential Winnings:</h3>
-          <p className="winnings-amount">{potentialWinnings}</p>
-        </div>
-      )}
-
       {/* Place Bet Button */}
       <button 
         className="place-bet-button"
-        onClick={handlePlaceBet}
-        disabled={!amount || !team || parseFloat(amount) > userCredits}
+        onClick={handleOpenConfirmation}
+        disabled={!amount || amount === '' || parseFloat(amount) <= 0 || !team || parseFloat(amount) > userCredits}
       >
         Place Bet
       </button>
@@ -542,9 +538,12 @@ setOdds(matchDetails?.away_odds);;
           betDetails={{
             team,
             amount,
-            betType,
+            betType: selectedBackLay ? selectedBackLay.type : betType,
             predictionValue,
-            potentialWinnings
+            potentialWinnings,
+            odds: selectedBackLay ? selectedBackLay.odds : null,
+            liability: selectedBackLay && selectedBackLay.type === 'lay' ? 
+              parseFloat(amount) * (parseFloat(selectedBackLay.odds) - 1) : null
           }}
           onConfirm={handlePlaceBet}
           onCancel={() => setShowConfirmation(false)}

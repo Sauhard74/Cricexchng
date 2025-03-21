@@ -192,8 +192,9 @@ const AdminDashboard = () => {
               <th>Username</th>
               <th>Amount</th>
               <th>Team</th>
-              <th>Status</th>
               <th>Bet Type</th>
+              <th>Odds</th>
+              <th>Status</th>
               <th>Prediction</th>
               <th>Actions</th>
             </tr>
@@ -205,11 +206,23 @@ const AdminDashboard = () => {
                 <td>{bet.username}</td>
                 <td>{bet.amount}</td>
                 <td>{bet.team}</td>
-                <td>{bet.status}</td>
-                <td>{bet.betType}</td>
+                <td>
+                  <span className={`bet-type ${bet.betType}`}>
+                    {bet.betType === 'back' ? '📈 Back' : 
+                     bet.betType === 'lay' ? '📉 Lay' : 
+                     bet.betType === 'winner' ? '🏆 Winner' : 
+                     bet.betType}
+                  </span>
+                </td>
+                <td>{bet.odds || '-'}</td>
+                <td>
+                  <span className={`bet-status ${bet.status.toLowerCase()}`}>
+                    {bet.status}
+                  </span>
+                </td>
                 <td>{bet.predictionValue || 'N/A'}</td>
                 <td>
-                  <button onClick={() => handleDeleteBet(bet._id)}>❌ Cancel Bet</button>
+                  <button className="cancel-bet-btn" onClick={() => handleDeleteBet(bet._id)}>❌ Cancel Bet</button>
                 </td>
               </tr>
             ))}

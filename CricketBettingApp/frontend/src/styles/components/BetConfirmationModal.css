@@ -23,10 +23,29 @@
 .bet-confirmation-modal h2 {
   color: #2c3e50;
   margin-top: 0;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   text-align: center;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+}
+
+.bet-type-header {
+  text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 6px;
+}
+
+.back-header {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 2px solid #91d5ff;
+}
+
+.lay-header {
+  background-color: #fff1f0;
+  color: #ff4d4f;
+  border: 2px solid #ffa39e;
 }
 
 .confirmation-details {
@@ -49,6 +68,12 @@
   margin: 10px 0;
 }
 
+.confirmation-row.warning {
+  background-color: #fff1f0;
+  color: #cf1322;
+  border: 1px solid #ffa39e;
+}
+
 .confirmation-warning {
   background-color: #fff3cd;
   color: #856404;
@@ -56,6 +81,27 @@
   border-radius: 4px;
   margin: 15px 0;
   font-size: 14px;
+}
+
+.lay-explanation, .back-explanation {
+  background-color: #f9f9f9;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 15px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.lay-explanation {
+  border-left: 4px solid #ff4d4f;
+}
+
+.back-explanation {
+  border-left: 4px solid #1890ff;
+}
+
+.lay-explanation p, .back-explanation p {
+  margin: 0;
 }
 
 .confirmation-buttons {
@@ -80,14 +126,25 @@
 }
 
 .confirm-button {
-  background-color: #28a745;
   color: white;
+}
+
+.back-button {
+  background-color: #1890ff;
+}
+
+.lay-button {
+  background-color: #ff4d4f;
 }
 
 .cancel-button:hover {
   background-color: #e9ecef;
 }
 
-.confirm-button:hover {
-  background-color: #218838;
+.back-button:hover {
+  background-color: #096dd9;
+}
+
+.lay-button:hover {
+  background-color: #cf1322;
 } 

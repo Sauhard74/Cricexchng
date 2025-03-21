@@ -21,7 +21,7 @@ router.get("/:username", protect, async (req, res) => {
 });
 
 router.post("/place", protect, async (req, res) => {
-  const { matchId, team, amount, betType, predictionValue } = req.body;
+  const { matchId, team, amount, betType, predictionValue, odds, liability } = req.body;
 
   try {
     // ✅ Directly access the user from token
@@ -45,28 +45,35 @@ router.post("/place", protect, async (req, res) => {
     }
 
     // ✅ Validation for betType and required fields
-    if (betType === "winner" && !team) {
-      return res.status(400).json({ error: "Team is required for winner bet" });
+    if ((betType === "winner" || betType === "back" || betType === "lay") && !team) {
+      return res.status(400).json({ error: "Team is required for winner, back, or lay bet" });
     }
 
     if ((betType === "runs" || betType === "wickets") && predictionValue == null) {
       return res.status(400).json({ error: "Prediction value is required for runs or wickets" });
     }
 
+    // ✅ Additional validation for back/lay bet types
+    if ((betType === "back" || betType === "lay") && !odds) {
+      return res.status(400).json({ error: "Odds are required for back or lay bets" });
+    }
+    
     // ✅ Deduct credits and save
     user.credits -= amount;
     await user.save();
 
     console.log(`✅ [UPDATED CREDITS]: ${user.username} now has ${user.credits} credits`);
 
-    // ✅ Save the bet (Supports multiple bet types)
+    // ✅ Save the bet (Supports multiple bet types including back/lay)
     const bet = new Bet({
       username: user.username,
       matchId,
-      team: betType === "winner" ? team : null,
+      team: ["winner", "back", "lay"].includes(betType) ? team : null,
       amount,
       betType,
-      predictionValue: betType !== "winner" ? predictionValue : null,
+      predictionValue: ["runs", "wickets"].includes(betType) ? predictionValue : null,
+      odds: ["back", "lay"].includes(betType) ? odds : null,
+      liability: betType === "lay" ? liability : null,
       status: "Pending",
     });
 

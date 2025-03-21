@@ -76,3 +76,62 @@ button {
   background-color: red;
   color: white;
 }
+
+.cancel-bet-btn {
+  background-color: white;
+  color: #ff4d4f;
+  border: 1px solid #ff4d4f;
+}
+
+.cancel-bet-btn:hover {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+/* Bet Type Styles */
+.bet-type {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.bet-type.back {
+  background-color: #1890ff;
+  color: white;
+}
+
+.bet-type.lay {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+.bet-type.winner {
+  background-color: #52c41a;
+  color: white;
+}
+
+/* Bet Status Styles */
+.bet-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+.bet-status.pending {
+  background-color: #1890ff;
+  color: white;
+}
+
+.bet-status.won {
+  background-color: #52c41a;
+  color: white;
+}
+
+.bet-status.lost {
+  background-color: #ff4d4f;
+  color: white;
+}

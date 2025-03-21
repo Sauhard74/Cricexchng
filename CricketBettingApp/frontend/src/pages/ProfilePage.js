@@ -77,6 +77,8 @@ const ProfilePage = () => {
                 <tr>
                   <th>Match ID</th>
                   <th>Team</th>
+                  <th>Bet Type</th>
+                  <th>Odds</th>
                   <th>Amount</th>
                   <th>Status</th>
                   <th>Date</th>
@@ -87,8 +89,21 @@ const ProfilePage = () => {
                   <tr key={bet._id}>
                     <td>{bet.matchId}</td>
                     <td>{bet.team}</td>
+                    <td>
+                      <span className={`bet-type ${bet.betType}`}>
+                        {bet.betType === 'back' ? '📈 Back' : 
+                         bet.betType === 'lay' ? '📉 Lay' : 
+                         bet.betType === 'winner' ? '🏆 Winner' : 
+                         bet.betType}
+                      </span>
+                    </td>
+                    <td>{bet.odds || '-'}</td>
                     <td>{bet.amount}</td>
-                    <td>{bet.status}</td>
+                    <td>
+                      <span className={`bet-status ${bet.status.toLowerCase()}`}>
+                        {bet.status}
+                      </span>
+                    </td>
                     <td>{new Date(bet.createdAt).toLocaleString()}</td>
                   </tr>
                 ))}
