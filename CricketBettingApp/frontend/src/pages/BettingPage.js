@@ -332,173 +332,204 @@ useEffect(() => {
 
   return (
     <div className="betting-page">
-      {/* Match Details Header */}
+      {/* Match Details */}
       <div className="match-header">
-        <h2>{matchDetails.home_team} vs {matchDetails.away_team}</h2>
-        <div className="match-info">
-          <p className="match-date">
-            <i className="fas fa-calendar-alt"></i> {formatMatchDate(matchDetails.scheduled)}
-          </p>
-          <p className="match-venue">
-            <i className="fas fa-map-marker-alt"></i> {matchDetails.venue || 'Venue TBD'}
-          </p>
-        </div>
+        <h2>🏏 {matchDetails.home_team} vs {matchDetails.away_team}</h2>
+        <p className="match-date">📅 {formatMatchDate(matchDetails.scheduled)}</p>
+        <p className="match-venue">📍 {matchDetails.venue || 'TBD'}</p>
       </div>
       
-      <div className="betting-page-content">
-        {/* User Credits */}
-        <div className="user-credits">
-          <p>Available Balance</p>
-          <p><strong>{userCredits.toLocaleString()}</strong></p>
-        </div>
-        
-        {/* Bookmaker Info */}
-        <div className="bookmaker-info">
-          <p><i className="fas fa-chart-line"></i> Odds by <strong>{matchDetails.bookmaker}</strong></p>
-          <p><i className="fas fa-sync-alt"></i> Updated <strong>{lastUpdate.toLocaleTimeString()}</strong></p>
-        </div>
+      {/* User Credits */}
+      <div className="user-credits">
+        <p>💰 Your Credits: <strong>{userCredits}</strong></p>
+      </div>
+      
+      {/* Bookmaker Info */}
+      <div className="bookmaker-info">
+        <p>📊 Odds provided by: <strong>{matchDetails.bookmaker}</strong></p>
+        <p>⏰ Last updated: <strong>{lastUpdate.toLocaleTimeString()}</strong></p>
+      </div>
 
-        {/* Current Odds */}
-        <div className="odds-container">
-          <h3><i className="fas fa-trophy"></i> Select Team to Bet On</h3>
-          <div className="team-odds-boxes">
-            <div
-              className={`odds-box ${team === matchDetails.home_team ? 'selected' : ''}`}
-              onClick={() => setTeam(matchDetails.home_team)}
-            >
-              <span className="team-name">{matchDetails.home_team}</span>
-              <span className="odds-value">
-                {typeof matchDetails.home_odds === 'number' 
-                  ? matchDetails.home_odds.toFixed(2) 
-                  : parseFloat(matchDetails.home_odds || 0).toFixed(2)}
-              </span>
-            </div>
-            <div
-              className={`odds-box ${team === matchDetails.away_team ? 'selected' : ''}`}
-              onClick={() => setTeam(matchDetails.away_team)}
-            >
-              <span className="team-name">{matchDetails.away_team}</span>
-              <span className="odds-value">
-                {typeof matchDetails.away_odds === 'number' 
-                  ? matchDetails.away_odds.toFixed(2) 
-                  : parseFloat(matchDetails.away_odds || 0).toFixed(2)}
-              </span>
-            </div>
+      {/* Back/Lay Explanation */}
+      <div className="betting-explainer">
+        <h3>Back & Lay Betting Explained</h3>
+        <div className="betting-explanation-grid">
+          <div className="back-explanation-box">
+            <h4>Back Bet</h4>
+            <p>When you "back" a team, you're betting that they <strong>will win</strong>.</p>
+            <p>Example: Back {matchDetails?.home_team} @ {matchDetails?.home_odds}</p>
+            <p>If {matchDetails?.home_team} wins, you win your stake × (odds - 1)</p>
           </div>
-        </div>
-
-        {/* Bet Type */}
-        <div className="bet-type-section">
-          <h3><i className="fas fa-dice"></i> Bet Type</h3>
-          <div className="bet-type-options">
-            <label className={`bet-type-option ${betType === 'winner' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="betType"
-                value="winner"
-                checked={betType === 'winner'}
-                onChange={(e) => setBetType(e.target.value)}
-              />
-              Match Winner
-            </label>
-            <label className={`bet-type-option ${betType === 'runs' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="betType"
-                value="runs"
-                checked={betType === 'runs'}
-                onChange={(e) => setBetType(e.target.value)}
-              />
-              Total Runs
-            </label>
-            <label className={`bet-type-option ${betType === 'wickets' ? 'selected' : ''}`}>
-              <input
-                type="radio"
-                name="betType"
-                value="wickets"
-                checked={betType === 'wickets'}
-                onChange={(e) => setBetType(e.target.value)}
-              />
-              Total Wickets
-            </label>
+          <div className="lay-explanation-box">
+            <h4>Lay Bet</h4>
+            <p>When you "lay" a team, you're betting that they <strong>will NOT win</strong>.</p>
+            <p>Example: Lay {matchDetails?.home_team} @ {(parseFloat(matchDetails?.home_odds) + 0.1).toFixed(2)}</p>
+            <p>You win your stake if {matchDetails?.home_team} loses, but risk liability (stake × (odds - 1)) if they win.</p>
           </div>
-        </div>
-
-        {/* Prediction Value */}
-        {betType !== 'winner' && (
-          <div className="prediction-input">
-            <h3>
-              <i className="fas fa-chart-bar"></i> 
-              {betType === 'runs' ? 'Predict Total Runs' : 'Predict Total Wickets'}
-            </h3>
-            <input
-              type="number"
-              value={predictionValue}
-              onChange={(e) => setPredictionValue(e.target.value)}
-              placeholder={betType === 'runs' ? 'Enter runs' : 'Enter wickets'}
-              min="0"
-            />
-          </div>
-        )}
-
-        {/* Amount */}
-        <div className="bet-amount-section">
-          <h3><i className="fas fa-coins"></i> Bet Amount</h3>
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => {
-              const value = parseFloat(e.target.value);
-              if (!isNaN(value) && value >= 0) {
-                if (value <= userCredits) {
-                  setAmount(e.target.value);
-                } else {
-                  alert('Amount cannot exceed available credits');
-                }
-              } else if (e.target.value === '') {
-                setAmount('');
-              }
-            }}
-            placeholder="Enter amount"
-            min="1"
-            max={userCredits}
-          />
-          
-          <div className="bet-amount-quick-options">
-            <button onClick={() => setAmount('100')}>₹100</button>
-            <button onClick={() => setAmount('500')}>₹500</button>
-            <button onClick={() => setAmount('1000')}>₹1000</button>
-            <button onClick={() => setAmount(userCredits.toString())}>Max</button>
-          </div>
-        </div>
-
-        {/* Potential Winnings */}
-        {potentialWinnings > 0 && (
-          <div className="potential-winnings">
-            <h3>Potential Winnings</h3>
-            <p className="winnings-amount">{potentialWinnings}</p>
-          </div>
-        )}
-
-        {/* Place Bet Button */}
-        <button 
-          className="place-bet-button"
-          onClick={handleOpenConfirmation}
-          disabled={!amount || !team || parseFloat(amount) > userCredits || parseFloat(amount) <= 0}
-        >
-          Place Bet
-        </button>
-        
-        {/* Betting Tips */}
-        <div className="betting-tips">
-          <h4><i className="fas fa-lightbulb"></i> Betting Tips</h4>
-          <ul>
-            <li>Odds reflect the probability of an outcome</li>
-            <li>Higher odds mean higher potential returns</li>
-            <li>Always bet responsibly and within your limits</li>
-          </ul>
         </div>
       </div>
+
+      {/* Back and Lay Table - Improved with 4 distinct options */}
+      <div className="back-lay-table">
+        <h3>Back/Lay Betting Options</h3>
+        <div className="back-lay-grid">
+            <div className="back-lay-team-header">{matchDetails?.home_team}</div>
+            <div className="back-lay-team-header">{matchDetails?.away_team}</div>
+            
+            {/* First row: Lay home, Back home */}
+            <div className="back-lay-row">
+                <div 
+                    className={`lay-box ${selectedBackLay && selectedBackLay.team === matchDetails.home_team && selectedBackLay.type === 'lay' ? 'selected' : ''}`}
+                    onClick={() => handleSelectBet(matchDetails.home_team, (parseFloat(matchDetails.home_odds) + 0.1).toFixed(2), 'lay')}
+                >
+                    <div className="bet-type-label">Lay</div>
+                    <div className="odds-value">{(parseFloat(matchDetails.home_odds) + 0.1).toFixed(2)}</div>
+                </div>
+                
+                <div 
+                    className={`back-box ${selectedBackLay && selectedBackLay.team === matchDetails.home_team && selectedBackLay.type === 'back' ? 'selected' : ''}`}
+                    onClick={() => handleSelectBet(matchDetails.home_team, matchDetails.home_odds, 'back')}
+                >
+                    <div className="bet-type-label">Back</div>
+                    <div className="odds-value">{matchDetails?.home_odds}</div>
+                </div>
+            </div>
+            
+            {/* Second row: Lay away, Back away */}
+            <div className="back-lay-row">
+                <div 
+                    className={`lay-box ${selectedBackLay && selectedBackLay.team === matchDetails.away_team && selectedBackLay.type === 'lay' ? 'selected' : ''}`}
+                    onClick={() => handleSelectBet(matchDetails.away_team, (parseFloat(matchDetails.away_odds) + 0.1).toFixed(2), 'lay')}
+                >
+                    <div className="bet-type-label">Lay</div>
+                    <div className="odds-value">{(parseFloat(matchDetails.away_odds) + 0.1).toFixed(2)}</div>
+                </div>
+                
+                <div 
+                    className={`back-box ${selectedBackLay && selectedBackLay.team === matchDetails.away_team && selectedBackLay.type === 'back' ? 'selected' : ''}`}
+                    onClick={() => handleSelectBet(matchDetails.away_team, matchDetails.away_odds, 'back')}
+                >
+                    <div className="bet-type-label">Back</div>
+                    <div className="odds-value">{matchDetails?.away_odds}</div>
+                </div>
+            </div>
+        </div>
+        
+        {selectedBackLay && (
+            <div className="selected-bet-info">
+                <p>Selected: <strong>{selectedBackLay.type === 'back' ? 'Back' : 'Lay'} {selectedBackLay.team}</strong> @ <strong>{selectedBackLay.odds}</strong></p>
+                {selectedBackLay.type === 'lay' && (
+                    <p>Liability: <strong>{(parseFloat(amount || 0) * (parseFloat(selectedBackLay.odds) - 1)).toFixed(2)}</strong></p>
+                )}
+            </div>
+        )}
+    </div>
+    
+      {/* Amount */}
+      <div className="bet-amount-section">
+        <h3>💵 Bet Amount:</h3>
+        <input
+          type="number"
+          value={amount}
+          onChange={(e) => {
+            const inputValue = e.target.value;
+            // Allow empty input (clearing the field)
+            if (inputValue === '') {
+              setAmount('');
+              return;
+            }
+            
+            // Don't parse the value until it's needed for validation
+            // This prevents conversion issues that could change the input
+            if (parseFloat(inputValue) > userCredits) {
+              alert('Amount cannot exceed available credits');
+              return;
+            }
+            
+            // Simply set the input value directly
+            setAmount(inputValue);
+          }}
+          placeholder="Enter amount"
+          min="0"
+          max={userCredits}
+        />
+      </div>
+
+      {/* Potential Winnings */}
+      {amount && potentialWinnings > 0 && (
+        <div className="potential-winnings">
+          <h3>{selectedBackLay && selectedBackLay.type === 'lay' ? '🏆 Potential Profit:' : '🏆 Potential Winnings:'}</h3>
+          <p className="winnings-amount">{potentialWinnings}</p>
+        </div>
+      )}
+      
+      {/* Display Liability for Lay bets */}
+      {selectedBackLay && selectedBackLay.type === 'lay' && amount > 0 && (
+        <div className="potential-liability">
+          <h3>⚠️ Your Liability:</h3>
+          <p className="liability-amount">{(parseFloat(amount) * (parseFloat(selectedBackLay.odds) - 1)).toFixed(2)}</p>
+        </div>
+      )}
+
+      {/* Bet Type */}
+      <div className="bet-type-section">
+        <h3>💰 Bet Type:</h3>
+        <div className="bet-type-options">
+          <label className={`bet-type-option ${betType === 'winner' ? 'selected' : ''}`}>
+            <input
+              type="radio"
+              name="betType"
+              value="winner"
+              checked={betType === 'winner'}
+              onChange={(e) => setBetType(e.target.value)}
+            />
+            Match Winner
+          </label>
+          <label className={`bet-type-option ${betType === 'runs' ? 'selected' : ''}`}>
+            <input
+              type="radio"
+              name="betType"
+              value="runs"
+              checked={betType === 'runs'}
+              onChange={(e) => setBetType(e.target.value)}
+            />
+            Total Runs
+          </label>
+          <label className={`bet-type-option ${betType === 'wickets' ? 'selected' : ''}`}>
+            <input
+              type="radio"
+              name="betType"
+              value="wickets"
+              checked={betType === 'wickets'}
+              onChange={(e) => setBetType(e.target.value)}
+            />
+            Total Wickets
+          </label>
+        </div>
+      </div>
+
+      {/* Prediction Value */}
+      {betType !== 'winner' && (
+        <div className="prediction-input">
+          <h3>🔹 {betType === 'runs' ? 'Predict Total Runs:' : 'Predict Total Wickets:'}</h3>
+          <input
+            type="number"
+            value={predictionValue}
+            onChange={(e) => setPredictionValue(e.target.value)}
+            placeholder={betType === 'runs' ? 'Enter runs' : 'Enter wickets'}
+            min="0"
+          />
+        </div>
+      )}
+
+      {/* Place Bet Button */}
+      <button 
+        className="place-bet-button"
+        onClick={handleOpenConfirmation}
+        disabled={!amount || amount === '' || parseFloat(amount) <= 0 || !team || parseFloat(amount) > userCredits}
+      >
+        Place Bet
+      </button>
 
       {/* Bet Confirmation Modal */}
       {showConfirmation && (

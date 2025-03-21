@@ -8,7 +8,7 @@ const BetsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all'); // 'all', 'pending', 'won', 'lost'
-  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
+  const [sortOrder, setSortOrder] = useState('desc'); // 'asc' or 'desc'
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -94,6 +94,8 @@ const BetsPage = () => {
         return 'status-lost';
       case 'pending':
         return 'status-pending';
+      case 'cancelled':
+        return 'status-cancelled';
       default:
         return '';
     }
@@ -132,6 +134,24 @@ const BetsPage = () => {
   // Toggle sort order
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
+  // Format bet type with emoji and text
+  const formatBetType = (betType) => {
+    switch (betType) {
+      case 'back':
+        return <span className="bet-type back">📈 Back</span>;
+      case 'lay':
+        return <span className="bet-type lay">📉 Lay</span>;
+      case 'winner':
+        return <span className="bet-type winner">🏆 Winner</span>;
+      case 'runs':
+        return <span className="bet-type runs">🏏 Runs</span>;
+      case 'wickets':
+        return <span className="bet-type wickets">🎯 Wickets</span>;
+      default:
+        return <span className="bet-type">{betType}</span>;
+    }
   };
 
   // Function to get team color based on name
@@ -185,6 +205,24 @@ const BetsPage = () => {
       whiteSpace: 'nowrap',
       fontSize: '14px'
     };
+  };
+
+  // Format match ID to be more readable
+  const formatMatchId = (matchId) => {
+    if (!matchId) return 'Unknown match';
+    
+    // Format the match ID to be more readable
+    let formattedMatchId = matchId;
+    if (formattedMatchId.includes('match_')) {
+      formattedMatchId = formattedMatchId.replace('match_', 'Match ');
+    }
+    
+    // Clean up underscores and make it more readable
+    formattedMatchId = formattedMatchId
+      .replace(/_/g, ' ')
+      .replace(/(\d{4})(\w+)(\d{4})/, '$1 vs $3');
+    
+    return formattedMatchId;
   };
 
   // Get the sorted and filtered bets
@@ -261,6 +299,12 @@ const BetsPage = () => {
             >
               Lost
             </button>
+            <button 
+              className={`filter-btn ${filter === 'cancelled' ? 'active' : ''}`} 
+              onClick={() => setFilter('cancelled')}
+            >
+              Cancelled
+            </button>
           </div>
         </div>
 
@@ -271,6 +315,8 @@ const BetsPage = () => {
                 <tr>
                   <th style={{backgroundColor: '#1e293b', color: 'white', padding: '1rem'}}>MATCH</th>
                   <th style={{backgroundColor: '#1e293b', color: 'white', padding: '1rem'}}>TEAM</th>
+                  <th style={{backgroundColor: '#1e293b', color: 'white', padding: '1rem'}}>BET TYPE</th>
+                  <th style={{backgroundColor: '#1e293b', color: 'white', padding: '1rem'}}>ODDS</th>
                   <th style={{backgroundColor: '#1e293b', color: 'white', padding: '1rem'}}>AMOUNT</th>
                   <th style={{backgroundColor: '#1e293b', color: 'white', padding: '1rem'}}>
                     DATE
@@ -279,18 +325,7 @@ const BetsPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredBets.map((bet, index) => {
-                  // Format the match ID to be more readable
-                  let formattedMatchId = bet.matchId || 'Unknown match';
-                  if (formattedMatchId.includes('match_')) {
-                    formattedMatchId = formattedMatchId.replace('match_', 'Match ');
-                  }
-                  
-                  // Clean up underscores and make it more readable
-                  formattedMatchId = formattedMatchId
-                    .replace(/_/g, ' ')
-                    .replace(/(\d{4})(\w+)(\d{4})/, '$1 vs $3');
-                  
+                {filteredBets.map((bet, index) => {                  
                   const rowBgColor = index % 2 === 0 ? '#ffffff' : '#f8fafc';
                   
                   return (
@@ -304,7 +339,7 @@ const BetsPage = () => {
                     >
                       <td style={{backgroundColor: rowBgColor, color: '#333', padding: '1rem'}}>
                         <div className="match-info">
-                          <span className="match-teams">{formattedMatchId}</span>
+                          <span className="match-teams">{formatMatchId(bet.matchId)}</span>
                         </div>
                       </td>
                       <td style={{backgroundColor: rowBgColor, color: '#333', padding: '1rem'}}>
@@ -314,6 +349,12 @@ const BetsPage = () => {
                         >
                           {bet.team || 'Unknown'}
                         </span>
+                      </td>
+                      <td style={{backgroundColor: rowBgColor, color: '#333', padding: '1rem'}}>
+                        {formatBetType(bet.betType)}
+                      </td>
+                      <td style={{backgroundColor: rowBgColor, color: '#333', padding: '1rem'}}>
+                        {bet.odds ? parseFloat(bet.odds).toFixed(2) : (bet.betType === 'runs' || bet.betType === 'wickets' ? bet.predictionValue : '-')}
                       </td>
                       <td style={{backgroundColor: rowBgColor, color: '#333', padding: '1rem'}}>
                         <span className="bet-amount">₹{(bet.amount || 0).toLocaleString()}</span>

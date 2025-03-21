@@ -8,7 +8,7 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState({
     username: '',
     phone: '',
-    credits: 0,
+    credits: 0
   });
   const [amount, setAmount] = useState(100);
   const [isLoading, setIsLoading] = useState(true);
@@ -231,70 +231,6 @@ const ProfilePage = () => {
                 Credit requests require admin approval before being added to your account.
               </p>
             </div>
-    <div className="profile-container">
-      <div className="profile-card">
-        <h2>👤 {profile.username}</h2>
-        <p>📞 {profile.phone || 'Not provided'}</p>
-
-        <div className="credits-section">
-          <h3>🖥️ Credits: {profile.credits}</h3>
-          <div className="request-credits-container">
-            {/* ✅ Input to select amount */}
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(Number(e.target.value))}
-              className="amount-input"
-              placeholder="Enter Amount"
-            />
-            <button onClick={handleRequestCredits} className="request-credits-btn">
-              Request Credits
-            </button>
-          </div>
-        </div>
-
-        <div className="bet-history">
-          <h3>🎯 Bet History</h3>
-          {profile.bets.length > 0 ? (
-            <table className="bets-table">
-              <thead>
-                <tr>
-                  <th>Match ID</th>
-                  <th>Team</th>
-                  <th>Bet Type</th>
-                  <th>Odds</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {profile.bets.map((bet) => (
-                  <tr key={bet._id}>
-                    <td>{bet.matchId}</td>
-                    <td>{bet.team}</td>
-                    <td>
-                      <span className={`bet-type ${bet.betType}`}>
-                        {bet.betType === 'back' ? '📈 Back' : 
-                         bet.betType === 'lay' ? '📉 Lay' : 
-                         bet.betType === 'winner' ? '🏆 Winner' : 
-                         bet.betType}
-                      </span>
-                    </td>
-                    <td>{bet.odds || '-'}</td>
-                    <td>{bet.amount}</td>
-                    <td>
-                      <span className={`bet-status ${bet.status.toLowerCase()}`}>
-                        {bet.status}
-                      </span>
-                    </td>
-                    <td>{new Date(bet.createdAt).toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No bets placed yet.</p>
           )}
         </div>
       </div>

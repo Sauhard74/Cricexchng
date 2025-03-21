@@ -174,20 +174,21 @@ const HomePage = () => {
     }
     
     if (date) {
-      // Create a date object from the match's scheduled time
-      const matchDateObj = new Date(match.scheduled);
-      
-      // Format the match date in YYYY-MM-DD format in local timezone
-      const matchDateFormatted = matchDateObj.toLocaleDateString('en-CA'); // en-CA uses YYYY-MM-DD format
+      // Convert match scheduled time to UTC date (YYYY-MM-DD)
+      const matchDate = new Date(match.scheduled);
+      const matchUTCDate = new Date(
+        Date.UTC(
+          matchDate.getUTCFullYear(),
+          matchDate.getUTCMonth(),
+          matchDate.getUTCDate()
+        )
+      );
+      const matchDateStr = matchUTCDate.toISOString().split('T')[0];
       
       // Log for debugging
-      console.log(`Match ${match.id}:
-        - scheduled time: ${match.scheduled}
-        - formatted date: ${matchDateFormatted}
-        - selected date: ${date}
-        - match? ${matchDateFormatted === date}`);
+      console.log(`Match ${match.id}: scheduled=${match.scheduled}, UTC date=${matchDateStr}, selected=${date}, match?=${matchDateStr === date}`);
       
-      matchesDate = matchDateFormatted === date;
+      matchesDate = matchDateStr === date;
     }
     
     return matchesLeague && matchesDate;

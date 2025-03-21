@@ -55,8 +55,10 @@ const AdminDashboard = () => {
       });
       
       if (data && Array.isArray(data)) {
-        setCreditRequests(data);
-        console.log("Credit requests fetched successfully:", data.length);
+        // Filter out any requests that aren't pending
+        const pendingRequests = data.filter(request => request.status === 'pending');
+        setCreditRequests(pendingRequests);
+        console.log("Credit requests fetched successfully:", pendingRequests.length, "(only pending requests)");
       } else {
         console.error("Invalid credit requests data format received:", data);
       }
@@ -95,28 +97,39 @@ const AdminDashboard = () => {
       // Map frontend status values to backend status values
       const backendStatus = status === 'approve' ? 'approved' : 'rejected';
       
+      console.log(`Processing credit request ${id} with status: ${backendStatus}`);
+      
       const { data } = await axios.post(
         `${process.env.REACT_APP_API_URL}/api/admin/credit-requests/${id}`,
         { status: backendStatus, reason },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Remove the request from the state after approval/rejection
-      setCreditRequests((prev) => prev.filter((req) => req._id !== id));
+      console.log(`Credit request ${status} response:`, data);
 
-      // Refresh users list after a short delay to show updated credits
+      // Immediately remove the request from the UI
+      setCreditRequests((prev) => {
+        console.log(`Removing credit request ${id} from UI`);
+        return prev.filter((req) => req._id !== id);
+      });
+
+      // Show appropriate success message
       if (status === 'approve') {
-        // Wait a moment to ensure the backend has finished processing
-        setTimeout(() => {
-          fetchUsers();
-        }, 500);
+        showMessage(`Credit request approved. Credits added to user account.`, 'success');
+        
+        // Wait a moment to ensure the backend has finished processing, then refresh users
+        console.log('Approved request, refreshing users list...');
+        fetchUsers();
+      } else {
+        showMessage(`Credit request rejected.`, 'success');
       }
       
-      // Show success message
-      showMessage(`Credit request ${status === 'approve' ? 'approved' : 'rejected'} successfully`, 'success');
     } catch (error) {
       console.error(`Failed to ${status} credit request:`, error);
-      showMessage(`Failed to ${status} credit request. Please try again.`, 'error');
+      showMessage(`Failed to ${status} credit request: ${error.response?.data?.error || error.message}`, 'error');
+      
+      // Refresh requests list to ensure UI is in sync
+      fetchCreditRequests();
     } finally {
       setLoading(false);
     }
@@ -147,37 +160,49 @@ const AdminDashboard = () => {
         const token = localStorage.getItem('token');
         console.log(`Sending request to cancel bet ${id}...`);
         
-        const { data } = await axios.delete(`${process.env.REACT_APP_API_URL}/api/admin/bets/${id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        // Add error handling for 404 status code
+        try {
+          const { data } = await axios.delete(`${process.env.REACT_APP_API_URL}/api/admin/bets/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
 
-        console.log(`Server response for bet cancellation:`, data);
+          console.log(`Server response for bet cancellation:`, data);
 
-        // Remove bet from UI
-        setBets((prev) => prev.filter((bet) => bet._id !== id));
-        
-        // Show appropriate message based on response
-        if (data.refunded) {
-          // Success case - refund processed
-          showMessage('Bet cancelled and credits refunded to user', 'success');
+          // Remove bet from UI
+          setBets((prev) => prev.filter((bet) => bet._id !== id));
           
-          // Refresh user list to show updated credits
-          console.log('Refreshing user list after credit refund...');
-          setTimeout(() => {
-            fetchUsers();
-          }, 500);
-        } else if (data.error) {
-          // Error case - bet cancelled but refund failed
-          showMessage(`Bet cancelled but refund failed: ${data.error}`, 'error');
-          // Still refresh users in case some updates happened
-          setTimeout(() => fetchUsers(), 500);
-        } else {
-          // No refund needed case
-          showMessage('Bet cancelled. No refund was processed.', 'info');
+          // Show appropriate message based on response
+          if (data.refunded) {
+            // Success case - refund processed
+            showMessage(`Bet cancelled successfully. ${data.refundAmount} credits refunded to user. New balance: ${data.newCredits}`, 'success');
+          } else if (data.error) {
+            // Error case - bet cancelled but refund failed
+            showMessage(`Bet cancelled but refund failed: ${data.error}`, 'error');
+          } else {
+            // No refund needed case
+            showMessage('Bet cancelled. No refund was processed.', 'info');
+          }
+          
+          // Refresh both lists immediately
+          fetchBets();
+          fetchUsers();
+        } catch (axiosError) {
+          if (axiosError.response && axiosError.response.status === 404) {
+            // Handle 404 - bet not found
+            showMessage('Bet not found or already cancelled. Refreshing bet list...', 'info');
+            fetchBets();
+          } else {
+            // Re-throw for the outer catch block
+            throw axiosError;
+          }
         }
       } catch (error) {
         console.error('Failed to cancel bet:', error);
-        showMessage(`Failed to cancel bet: ${error.response?.data?.error || error.message}`, 'error');
+        const errorMessage = error.response?.data?.error || error.message;
+        showMessage(`Failed to cancel bet: ${errorMessage}`, 'error');
+        
+        // Refresh the bets list anyway to ensure UI is in sync
+        fetchBets();
       } finally {
         setLoading(false);
       }
@@ -247,25 +272,41 @@ const AdminDashboard = () => {
         const token = localStorage.getItem('token');
         console.log(`Sending request to force cancel bet ${id}...`);
         
-        const { data } = await axios.post(
-          `${process.env.REACT_APP_API_URL}/api/admin/bets/force-cancel/${id}`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        try {
+          const { data } = await axios.post(
+            `${process.env.REACT_APP_API_URL}/api/admin/bets/force-cancel/${id}`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
 
-        console.log(`Server response for force bet cancellation:`, data);
+          console.log(`Server response for force bet cancellation:`, data);
 
-        // Remove bet from UI
-        setBets((prev) => prev.filter((bet) => bet._id !== id));
-        
-        // Show success message
-        showMessage(`Bet force-cancelled and ${data.refundAmount} credits refunded to user. New balance: ${data.newCredits}`, 'success');
-        
-        // Refresh user list to show updated credits
-        setTimeout(() => fetchUsers(), 500);
+          // Remove bet from UI
+          setBets((prev) => prev.filter((bet) => bet._id !== id));
+          
+          // Show success message with details
+          showMessage(`Emergency action: Bet force-cancelled and ${data.refundAmount} credits refunded to user. New balance: ${data.newCredits}`, 'success');
+          
+          // Refresh lists
+          fetchBets();
+          fetchUsers();
+        } catch (axiosError) {
+          if (axiosError.response && axiosError.response.status === 404) {
+            // Handle 404 - bet not found
+            showMessage('Bet not found or already cancelled. Refreshing bet list...', 'info');
+            fetchBets();
+          } else {
+            // Re-throw for the outer catch block
+            throw axiosError;
+          }
+        }
       } catch (error) {
         console.error('Failed to force-cancel bet:', error);
-        showMessage(`Failed to force-cancel bet: ${error.response?.data?.error || error.message}`, 'error');
+        const errorMessage = error.response?.data?.error || error.message;
+        showMessage(`Failed to force-cancel bet: ${errorMessage}`, 'error');
+        
+        // Refresh the bets list anyway to ensure UI is in sync
+        fetchBets();
       } finally {
         setLoading(false);
       }
@@ -343,7 +384,7 @@ const AdminDashboard = () => {
       {/* ✅ Credit Requests */}
       <section>
         <h3>
-          💰 Credit Requests
+          💰 Pending Credit Requests
           <button 
             className="refresh-btn" 
             onClick={() => {
@@ -355,46 +396,51 @@ const AdminDashboard = () => {
             🔄 Refresh
           </button>
         </h3>
-        <table>
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Amount</th>
-              <th>Phone</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {creditRequests.map(request => (
-              <tr key={request._id}>
-                <td>{request.username}</td>
-                <td>{request.amount}</td>
-                <td>{request.phone}</td>
-                <td>{request.status}</td>
-
-                <td>
-                  {request.status === 'pending' && (
-                    <>
-                      <button 
-                        onClick={() => handleCreditAction(request._id, 'approve')}
-                        disabled={loading}
-                      >
-                        ✅ Approve
-                      </button>
-                      <button 
-                        onClick={() => handleCreditAction(request._id, 'reject')}
-                        disabled={loading}
-                      >
-                        ❌ Reject
-                      </button>
-                    </>
-                  )}
-                </td>
+        {creditRequests.length > 0 ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Amount</th>
+                <th>Phone</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {creditRequests.map(request => (
+                <tr key={request._id}>
+                  <td>{request.username}</td>
+                  <td>{request.amount}</td>
+                  <td>{request.phone}</td>
+                  <td>{request.status}</td>
+                  <td>
+                    {request.status === 'pending' && (
+                      <>
+                        <button 
+                          onClick={() => handleCreditAction(request._id, 'approve')}
+                          disabled={loading}
+                        >
+                          ✅ Approve
+                        </button>
+                        <button 
+                          onClick={() => handleCreditAction(request._id, 'reject')}
+                          disabled={loading}
+                        >
+                          ❌ Reject
+                        </button>
+                      </>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <div className="no-requests-message">
+            <p>No pending credit requests</p>
+          </div>
+        )}
       </section>
 
       {/* ✅ Bets */}
@@ -447,13 +493,10 @@ const AdminDashboard = () => {
                     {bet.status}
                   </span>
                 </td>
-                <td className={`bet-status bet-status-${bet.status.toLowerCase()}`}>
-                  {bet.status}
-                </td>
-                <td>{bet.betType}</td>
                 <td>{bet.predictionValue || 'N/A'}</td>
-                <td>
+                <td className="action-buttons">
                   <button 
+                    className="cancel-bet-btn"
                     onClick={() => handleDeleteBet(bet._id)}
                     disabled={loading}
                   >

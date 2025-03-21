@@ -40,19 +40,22 @@ const BetConfirmationModal = ({ matchDetails, betDetails, onConfirm, onCancel })
           </div>
         </div>
         
-        <div className={`bet-type-header ${betType === 'back' ? 'back-header' : 'lay-header'}`}>
-          {betType === 'back' ? 'Back Bet' : 'Lay Bet'}
+        <div className={`bet-type-header ${betType === 'back' ? 'back-header' : betType === 'lay' ? 'lay-header' : ''}`}>
+          {betType === 'back' ? 'Back Bet' : betType === 'lay' ? 'Lay Bet' : 'Standard Bet'}
         </div>
         
         <div className="confirmation-details">
           <div className="confirmation-row">
             <span><i className="fas fa-futbol"></i> Bet Type</span>
-            <span className="value">{betType === 'winner' ? 'Match Winner' : betType === 'runs' ? 'Total Runs' : 'Total Wickets'}</span>
+            <span className="value">{getBetTypeDescription()}</span>
           </div>
           
-          {betType === 'winner' ? (
+          {(betType === 'winner' || betType === 'back' || betType === 'lay') ? (
             <div className="confirmation-row">
-              <span><i className="fas fa-trophy"></i> Team</span>
+              <span>
+                <i className={betType === 'lay' ? "fas fa-times-circle" : "fas fa-trophy"}></i>
+                {betType === 'lay' ? 'Team (Not to Win)' : 'Team'}
+              </span>
               <span className="value highlight">{team}</span>
             </div>
           ) : (
@@ -69,11 +72,20 @@ const BetConfirmationModal = ({ matchDetails, betDetails, onConfirm, onCancel })
           
           <div className="confirmation-row">
             <span><i className="fas fa-percentage"></i> Odds</span>
-            <span className="value">{team === matchDetails.home_team 
-              ? parseFloat(matchDetails.home_odds).toFixed(2) 
-              : parseFloat(matchDetails.away_odds).toFixed(2)
+            <span className="value">{odds ? 
+              parseFloat(odds).toFixed(2) : 
+              team === matchDetails.home_team ? 
+                parseFloat(matchDetails.home_odds).toFixed(2) : 
+                parseFloat(matchDetails.away_odds).toFixed(2)
             }</span>
           </div>
+          
+          {betType === 'lay' && (
+            <div className="confirmation-row highlight-row liability-row">
+              <span><i className="fas fa-exclamation-circle"></i> Your Liability</span>
+              <span className="value liability-value">₹{parseFloat(liability || calculatedLiability).toLocaleString()}</span>
+            </div>
+          )}
           
           <div className="confirmation-row highlight-row">
             <span><i className="fas fa-money-bill-wave"></i> Potential Winnings</span>
@@ -90,8 +102,8 @@ const BetConfirmationModal = ({ matchDetails, betDetails, onConfirm, onCancel })
           <button className="cancel-button" onClick={onCancel}>
             Cancel
           </button>
-          <button className={`confirm-button ${betType === 'back' ? 'back-button' : 'lay-button'}`} onClick={onConfirm}>
-            Confirm {betType === 'back' ? 'Back' : 'Lay'} Bet
+          <button className={`confirm-button ${betType === 'back' ? 'back-button' : betType === 'lay' ? 'lay-button' : ''}`} onClick={onConfirm}>
+            Confirm {betType === 'back' ? 'Back' : betType === 'lay' ? 'Lay' : ''} Bet
           </button>
         </div>
       </div>

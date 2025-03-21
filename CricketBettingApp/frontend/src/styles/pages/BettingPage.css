@@ -682,3 +682,143 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Back/Lay Betting Styles */
+.back-lay-section {
+  margin-bottom: 1.5rem;
+  background-color: #f8fafc;
+  padding: 1rem;
+  border-radius: 10px;
+}
+
+.back-lay-section h3 {
+  margin-bottom: 1rem;
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.back-lay-container {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.team-back-lay {
+  flex: 1;
+  min-width: 250px;
+  background-color: white;
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.team-back-lay h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  text-align: center;
+  color: #334155;
+}
+
+.back-lay-buttons {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.back-button, .lay-button {
+  flex: 1;
+  padding: 0.75rem 0.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.back-button {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  border: 1px solid #91d5ff;
+}
+
+.lay-button {
+  background-color: #fff1f0;
+  color: #ff4d4f;
+  border: 1px solid #ffa39e;
+}
+
+.back-button:hover {
+  background-color: #bae7ff;
+  transform: translateY(-2px);
+}
+
+.lay-button:hover {
+  background-color: #ffccc7;
+  transform: translateY(-2px);
+}
+
+.back-button.selected {
+  background-color: #1890ff;
+  border-color: #096dd9;
+  color: white;
+}
+
+.lay-button.selected {
+  background-color: #ff4d4f;
+  border-color: #cf1322;
+  color: white;
+}
+
+.button-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.button-odds {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.selection-summary {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.back-selection {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #91d5ff;
+}
+
+.lay-selection {
+  background-color: #fff1f0;
+  color: #ff4d4f;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ffa39e;
+}
+
+.liability-warning {
+  margin-top: 0.5rem;
+  color: #ff4d4f;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .back-lay-container {
+    flex-direction: column;
+  }
+  
+  .team-back-lay {
+    min-width: auto;
+  }
+}

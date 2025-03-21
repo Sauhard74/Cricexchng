@@ -210,3 +210,24 @@ button {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Add styling for no-requests-message */
+.no-requests-message {
+  background-color: white;
+  color: #666;
+  padding: 20px;
+  text-align: center;
+  border-radius: 8px;
+  margin-top: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.no-requests-message p {
+  font-size: 16px;
+  margin: 0;
+}
+
+/* Make sure buttons stay consistent with our new styling */
+.action-buttons button {
+  margin-bottom: 5px;
+}

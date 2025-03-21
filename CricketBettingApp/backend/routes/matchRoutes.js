@@ -58,26 +58,32 @@ router.get("/matches/:date", async (req, res) => {
         const matchesForDate = oddsEntries.filter(odds => {
             if (!odds.commence) return true; // Include if no date specified
             
-            // Create a date object from the commence time
-            const oddsDateObj = new Date(odds.commence);
+            // Parse the requested date (YYYY-MM-DD) and set it to midnight UTC
+            const reqYear = parseInt(date.substr(0, 4));
+            const reqMonth = parseInt(date.substr(5, 2)) - 1; // months are 0-indexed
+            const reqDay = parseInt(date.substr(8, 2));
             
-            // Create a date object from the requested date (ensure it's in the same timezone)
-            const requestedDate = new Date(date);
+            // Create UTC date objects for comparison without time component
+            const requestedUTCDate = new Date(Date.UTC(reqYear, reqMonth, reqDay));
             
-            // Format both to YYYY-MM-DD in local timezone
-            const oddsDateFormatted = oddsDateObj.toLocaleDateString('en-CA'); // en-CA uses YYYY-MM-DD format
-            const requestedDateFormatted = requestedDate.toLocaleDateString('en-CA');
+            // Convert match commence time to UTC date
+            const matchDateObj = new Date(odds.commence);
+            const matchUTCDate = new Date(
+                Date.UTC(
+                    matchDateObj.getUTCFullYear(),
+                    matchDateObj.getUTCMonth(),
+                    matchDateObj.getUTCDate()
+                )
+            );
+            
+            // Format for logging
+            const requestedDateStr = requestedUTCDate.toISOString().split('T')[0];
+            const matchDateStr = matchUTCDate.toISOString().split('T')[0];
             
             // Log for debugging
-            console.log(`Match ${odds.matchId}:
-              - commence time: ${odds.commence}
-              - odds date obj: ${oddsDateObj}
-              - formatted odds date: ${oddsDateFormatted}
-              - requested date: ${date}
-              - formatted requested date: ${requestedDateFormatted}
-              - match? ${oddsDateFormatted === requestedDateFormatted}`);
+            console.log(`Match ${odds.matchId}: req=${requestedDateStr}, match=${matchDateStr}, match=${matchDateStr === requestedDateStr}`);
             
-            return oddsDateFormatted === requestedDateFormatted;
+            return matchDateStr === requestedDateStr;
         });
         
         // Create match objects from odds data
