@@ -17,6 +17,11 @@
     "ws": "^8.18.1"
   },
   "scripts": {
-    "start": "node app.js"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "build": "echo 'No build step required for Node.js backend'"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }

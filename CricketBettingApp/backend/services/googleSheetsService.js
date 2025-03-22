@@ -3,15 +3,28 @@ const sheets = google.sheets('v4');
 
 // Configure Google Sheets API credentials
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
-const SPREADSHEET_ID = '1kQ2Lv7EQsUVaGaAkuB57K6nWlRm5EATrZMfE2LUz_pI';
-const SHEET_NAME = 'Sheet1'; // Update this if your sheet has a different name
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '1kQ2Lv7EQsUVaGaAkuB57K6nWlRm5EATrZMfE2LUz_pI';
+const SHEET_NAME = process.env.SHEET_NAME || 'Sheet1'; // Update this if your sheet has a different name
 
 // Initialize auth client
 async function getAuthClient() {
-  const auth = new google.auth.GoogleAuth({
-    keyFile: './credentials.json',
-    scopes: SCOPES,
-  });
+  let auth;
+  
+  if (process.env.NODE_ENV === 'production') {
+    // In production, use credentials from environment variables
+    const credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: SCOPES,
+    });
+  } else {
+    // In development, use credentials from file
+    auth = new google.auth.GoogleAuth({
+      keyFile: './credentials.json',
+      scopes: SCOPES,
+    });
+  }
+  
   return auth.getClient();
 }
 
