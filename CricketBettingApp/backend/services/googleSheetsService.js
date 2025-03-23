@@ -1,18 +1,45 @@
 const { google } = require('googleapis');
 const sheets = google.sheets('v4');
+const fs = require('fs');
+const path = require('path');
 
 // Configure Google Sheets API credentials
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
-const SPREADSHEET_ID = '1kQ2Lv7EQsUVaGaAkuB57K6nWlRm5EATrZMfE2LUz_pI';
-const SHEET_NAME = 'Sheet1'; // Update this if your sheet has a different name
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID || '1kQ2Lv7EQsUVaGaAkuB57K6nWlRm5EATrZMfE2LUz_pI';
+const SHEET_NAME = process.env.SHEET_NAME || 'Sheet1'; 
 
 // Initialize auth client
 async function getAuthClient() {
-  const auth = new google.auth.GoogleAuth({
-    keyFile: './credentials.json',
-    scopes: SCOPES,
-  });
-  return auth.getClient();
+  try {
+    let credentials;
+    
+    // Try to get credentials from environment variable first
+    if (process.env.GOOGLE_CREDENTIALS) {
+      console.log('Using Google credentials from environment variable');
+      credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS);
+    } 
+    // If that fails, try to get from credentials.json file
+    else {
+      const credentialsPath = path.join(__dirname, '../credentials.json');
+      
+      if (fs.existsSync(credentialsPath)) {
+        console.log('Using Google credentials from file:', credentialsPath);
+        credentials = require(credentialsPath);
+      } else {
+        throw new Error('No Google API credentials found. Please set GOOGLE_CREDENTIALS environment variable or provide credentials.json file.');
+      }
+    }
+    
+    console.log('Initializing Google Sheets API with credentials');
+    const auth = new google.auth.GoogleAuth({
+      credentials,
+      scopes: SCOPES,
+    });
+    return auth.getClient();
+  } catch (error) {
+    console.error('Error initializing Google Auth client:', error);
+    throw error;
+  }
 }
 
 // Update the parseDate function

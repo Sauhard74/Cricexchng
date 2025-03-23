@@ -1,9 +1,33 @@
+// Load environment variables first, before any other imports
+const path = require('path');
+const fs = require('fs');
+
+// Try to load .env file if it exists
+const envPath = path.resolve(__dirname, '.env');
+if (fs.existsSync(envPath)) {
+  console.log(`Loading environment from: ${envPath}`);
+  require('dotenv').config({ path: envPath });
+} else {
+  console.log('No .env file found, using environment variables from system');
+  require('dotenv').config();
+}
+
 const express = require("express");
 const cors = require("cors");
 const http = require('http');
 const WebSocket = require('ws');
 const connectDB = require("./config/db");
 const { initOddsCronJob } = require("./services/cronService");
+
+// Log environment variables for debugging (hiding sensitive values)
+console.log('Environment Variables Status:');
+console.log('- PORT:', process.env.PORT || '5001 (default)');
+console.log('- NODE_ENV:', process.env.NODE_ENV || 'development (default)');
+console.log('- MONGO_URI:', process.env.MONGO_URI ? 'Set ✓' : 'Not Set ✗');
+console.log('- JWT_SECRET:', process.env.JWT_SECRET ? 'Set ✓' : 'Not Set ✗');
+console.log('- SPORTRADAR_API_KEY:', process.env.SPORTRADAR_API_KEY ? 'Set ✓' : 'Not Set ✗');
+console.log('- GOOGLE_CREDENTIALS:', process.env.GOOGLE_CREDENTIALS ? 'Set ✓' : 'Not Set ✗');
+console.log('- SPREADSHEET_ID:', process.env.SPREADSHEET_ID ? 'Set ✓' : 'Not Set ✗');
 
 const app = express();
 const server = http.createServer(app);
