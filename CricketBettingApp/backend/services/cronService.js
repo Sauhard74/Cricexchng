@@ -1,5 +1,6 @@
 const cron = require('node-cron');
 const { fetchOddsFromSheet } = require('./googleSheetsService');
+const { fetchLiveMatches } = require('./sportsRadarService');
 const Odds = require('../models/Odds');
 const Match = require('../models/Match');
 
@@ -96,6 +97,69 @@ const initOddsCronJob = (broadcastCallback) => {
       }
     } catch (error) {
       console.error('❌ Error in cron job:', error);
+    }
+  });
+
+  // New cron job to update live match statuses every 2 minutes
+  cron.schedule('*/2 * * * *', async () => {
+    try {
+      console.log('🔄 Fetching live matches...');
+      const liveMatches = await fetchLiveMatches();
+      
+      if (liveMatches && liveMatches.length > 0) {
+        console.log(`Found ${liveMatches.length} live matches from API`);
+        
+        // Update each live match in the database
+        for (const liveMatch of liveMatches) {
+          try {
+            // Generate a consistent matchId based on team names
+            const matchId = `match_${liveMatch.home_team.replace(/[^a-zA-Z0-9]/g, '')}_${liveMatch.away_team.replace(/[^a-zA-Z0-9]/g, '')}`;
+            
+            // Update the match status in the database
+            const updatedMatch = await Match.findOneAndUpdate(
+              { 
+                $or: [
+                  { matchId },
+                  { team1: liveMatch.home_team, team2: liveMatch.away_team },
+                  { team1: liveMatch.home_team.trim(), team2: liveMatch.away_team.trim() }
+                ]
+              },
+              { 
+                status: 'in_play',
+                matchId: matchId,
+                team1: liveMatch.home_team,
+                team2: liveMatch.away_team,
+                scheduled: liveMatch.scheduled || new Date()
+              },
+              { new: true, upsert: true }
+            );
+            
+            if (updatedMatch) {
+              console.log(`✅ Updated match status to LIVE: ${liveMatch.home_team} vs ${liveMatch.away_team}`);
+              
+              // Also update the odds status if it exists
+              await Odds.updateMany(
+                { matchId },
+                { status: 'in_play' }
+              );
+            }
+          } catch (error) {
+            console.error(`❌ Error updating live match:`, error);
+          }
+        }
+        
+        // If there are callbacks registered, broadcast the live match status changes
+        if (broadcastCallback) {
+          const updatedOdds = await Odds.find({ status: 'in_play' });
+          if (updatedOdds.length > 0) {
+            broadcastCallback(updatedOdds);
+          }
+        }
+      } else {
+        console.log('No live matches currently available');
+      }
+    } catch (error) {
+      console.error('❌ Error in live matches cron job:', error);
     }
   });
 

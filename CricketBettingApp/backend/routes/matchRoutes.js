@@ -526,8 +526,32 @@ router.get("/betting/:matchId", async (req, res) => {
 
 router.get('/live', async (req, res) => {
   try {
-    const matches = await Match.find().sort({ scheduled: 1 });
-    const matchesWithOdds = await Promise.all(matches.map(async (match) => {
+    // Find only matches with status 'in_play' or 'started'
+    const liveMatches = await Match.find({ 
+      status: { $in: ['in_play', 'started'] } 
+    }).sort({ scheduled: 1 });
+
+    console.log(`📊 Found ${liveMatches.length} live matches in database`);
+    
+    // If no live matches, try to fetch directly from API
+    if (liveMatches.length === 0) {
+      try {
+        const { fetchLiveMatches } = require('../services/sportsRadarService');
+        const apiLiveMatches = await fetchLiveMatches();
+        
+        if (apiLiveMatches && apiLiveMatches.length > 0) {
+          console.log(`📡 Found ${apiLiveMatches.length} live matches from API`);
+          
+          // Return API results directly if we have them
+          return res.json(apiLiveMatches);
+        }
+      } catch (error) {
+        console.error('Error fetching live matches from API:', error);
+        // Continue with normal flow if API fetch fails
+      }
+    }
+
+    const matchesWithOdds = await Promise.all(liveMatches.map(async (match) => {
       // Get all odds for this match, sorted by lastUpdated
       const allOdds = await Odds.find({ 
         matchId: match.matchId
@@ -535,7 +559,18 @@ router.get('/live', async (req, res) => {
 
       if (!allOdds || allOdds.length === 0) {
         console.log(`No odds found for match: ${match.matchId}`);
-        return null;
+        
+        // Return match data even without odds
+        return {
+          id: match.matchId,
+          home_team: match.team1,
+          away_team: match.team2,
+          scheduled: match.scheduled,
+          status: match.status,
+          home_odds: 1.0,
+          away_odds: 1.0,
+          bookmaker: "Default"
+        };
       }
 
       // Just use the first available odds (most recently updated)
@@ -553,9 +588,9 @@ router.get('/live', async (req, res) => {
       };
     }));
 
-    // Filter out matches without odds
+    // Filter out matches without odds (should be none with our default handling)
     const validMatches = matchesWithOdds.filter(match => match !== null);
-    console.log(`📊 Found ${validMatches.length} matches with odds`);
+    console.log(`📊 Returning ${validMatches.length} live matches with data`);
     res.json(validMatches);
   } catch (error) {
     console.error('Error fetching live matches:', error);

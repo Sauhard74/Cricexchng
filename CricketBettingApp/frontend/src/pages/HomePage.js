@@ -155,11 +155,25 @@ const HomePage = () => {
   // Filter matches based on active tab
   const filteredMatches = matches.filter(match => {
     if (activeTab === 'live') {
-      return match.status === 'in_play' || match.status === 'started';
+      // More comprehensive status checking for live matches
+      const status = (match.status || '').toLowerCase();
+      return status === 'in_play' || 
+             status === 'started' || 
+             status === 'live' || 
+             status === 'inprogress' || 
+             status === 'in progress';
     } else if (activeTab === 'upcoming') {
-      return match.status === 'not_started' || match.status === 'scheduled' || match.status === 'Pending' || match.status === 'pending';
+      const status = (match.status || '').toLowerCase();
+      return status === 'not_started' || 
+             status === 'scheduled' || 
+             status === 'pending' || 
+             status === 'created';
     } else if (activeTab === 'recent') {
-      return match.status === 'closed' || match.status === 'finished';
+      const status = (match.status || '').toLowerCase();
+      return status === 'closed' || 
+             status === 'finished' || 
+             status === 'completed' || 
+             status === 'ended';
     }
     return true;
   });

@@ -20,8 +20,15 @@ apiClient.interceptors.response.use(
 // ✅ Fetch Live Matches
 export const getLiveMatches = async () => {
   try {
+    console.log('Fetching live matches from API...');
     const response = await axios.get(`${API_URL}/matches/live`);
-    console.log('API Response:', response.data); // Debug log
+    console.log(`API Response: Received ${response.data?.length || 0} live matches`); 
+    
+    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+      console.log('Live matches found:', response.data.map(m => `${m.home_team} vs ${m.away_team} (${m.status})`).join(', '));
+    } else {
+      console.log('No live matches data received from API');
+    }
     
     // Ensure we return an empty array if no data
     return response.data || [];
