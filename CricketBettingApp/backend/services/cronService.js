@@ -1,8 +1,10 @@
 const cron = require('node-cron');
 const { fetchOddsFromSheet } = require('./googleSheetsService');
-const { fetchLiveMatches } = require('./sportsRadarService');
+const { fetchLiveMatches, fetchMatchDetails } = require('./sportsRadarService');
+const { findSportradarMatchId } = require('../utils/matchUtils');
 const Odds = require('../models/Odds');
 const Match = require('../models/Match');
+const MatchMapping = require('../models/MatchMapping');
 
 // Helper function to normalize match status
 function normalizeStatus(status) {
@@ -14,6 +16,60 @@ function normalizeStatus(status) {
     return 'closed';
   }
   return status;
+}
+
+// Helper function to map all matches to Sportradar
+async function mapAllMatchesToSportradar() {
+  try {
+    console.log('🔄 Starting match mapping process...');
+    
+    // Get all matches from our database
+    const matches = await Match.find({});
+    console.log(`Found ${matches.length} matches to process`);
+    
+    for (const match of matches) {
+      try {
+        // Skip if we already have a mapping
+        const existingMapping = await MatchMapping.findOne({ oddsMatchId: match.matchId });
+        if (existingMapping) {
+          console.log(`✅ Mapping already exists for match: ${match.home_team} vs ${match.away_team}`);
+          continue;
+        }
+        
+        // Try to find Sportradar match ID
+        const sportradarMatchId = await findSportradarMatchId(match.matchId);
+        
+        if (sportradarMatchId) {
+          console.log(`✅ Successfully mapped match: ${match.home_team} vs ${match.away_team}`);
+          
+          // Update match with Sportradar data
+          const sportradarData = await fetchMatchDetails(sportradarMatchId);
+          if (sportradarData) {
+            await Match.findByIdAndUpdate(match._id, {
+              venue: sportradarData.venue,
+              status: sportradarData.status || match.status,
+              toss_winner: sportradarData.toss_winner,
+              toss_decision: sportradarData.toss_decision,
+              match_winner: sportradarData.match_winner,
+              home_score: sportradarData.home_score,
+              away_score: sportradarData.away_score,
+              batting_scorecard: sportradarData.batting_scorecard || match.batting_scorecard,
+              bowling_scorecard: sportradarData.bowling_scorecard || match.bowling_scorecard,
+              commentary: sportradarData.commentary || []
+            });
+          }
+        } else {
+          console.log(`⚠️ Could not find Sportradar mapping for: ${match.home_team} vs ${match.away_team}`);
+        }
+      } catch (error) {
+        console.error(`❌ Error processing match ${match.matchId}:`, error);
+      }
+    }
+    
+    console.log('✅ Completed match mapping process');
+  } catch (error) {
+    console.error('❌ Error in match mapping process:', error);
+  }
 }
 
 const initOddsCronJob = (broadcastCallback) => {
@@ -43,26 +99,72 @@ const initOddsCronJob = (broadcastCallback) => {
         try {
           const odds = teamGroups[teamKey];
           
-          // Generate a consistent matchId based on team names
-          const matchId = `match_${odds.homeTeam.replace(/[^a-zA-Z0-9]/g, '')}_${odds.awayTeam.replace(/[^a-zA-Z0-9]/g, '')}`;
+          // Generate matchId in the exact format as seen in database
+          const matchId = `match_${odds.homeTeam.replace(/\s+/g, '')}_${odds.awayTeam.replace(/\s+/g, '')}`;
           odds.matchId = matchId;
+          
+          console.log('Generated matchId:', matchId); // Add logging to verify matchId format
           
           // Use exact values from sheets
           odds.homeOdds = parseFloat(odds.homeOdds);
           odds.awayOdds = parseFloat(odds.awayOdds);
           
           // Create or update match entry
-          let match = await Match.findOne({ matchId });
-          
-          if (!match) {
-            match = await Match.create({
+          let match = await Match.findOneAndUpdate(
+            { matchId },
+            {
               matchId,
-              team1: odds.homeTeam,
-              team2: odds.awayTeam,
+              home_team: odds.homeTeam,
+              away_team: odds.awayTeam,
               scheduled: new Date(odds.commence),
               status: normalizeStatus(odds.status || "not_started")
-            });
-            console.log(`✅ Created new match entry for ${odds.homeTeam} vs ${odds.awayTeam}`);
+            },
+            { new: true, upsert: true }
+          );
+
+          console.log('Match data after update:', {
+            id: match._id,
+            matchId: match.matchId,
+            home_team: match.home_team,
+            away_team: match.away_team
+          });
+
+          // Try to create match mapping if it doesn't exist
+          const existingMapping = await MatchMapping.findOne({ oddsMatchId: matchId });
+          if (!existingMapping) {
+            try {
+              const sportradarMatchId = await findSportradarMatchId(matchId);
+              if (sportradarMatchId) {
+                const newMapping = new MatchMapping({
+                  oddsMatchId: matchId,
+                  sportradarMatchId: sportradarMatchId,
+                  homeTeam: odds.homeTeam,
+                  awayTeam: odds.awayTeam,
+                  scheduled: new Date(odds.commence)
+                });
+                await newMapping.save();
+                console.log(`✅ Created new mapping for ${odds.homeTeam} vs ${odds.awayTeam}`);
+
+                // Update match with Sportradar data
+                const sportradarData = await fetchMatchDetails(sportradarMatchId);
+                if (sportradarData) {
+                  await Match.findByIdAndUpdate(match._id, {
+                    venue: sportradarData.venue,
+                    status: sportradarData.status || match.status,
+                    toss_winner: sportradarData.toss_winner,
+                    toss_decision: sportradarData.toss_decision,
+                    match_winner: sportradarData.match_winner,
+                    home_score: sportradarData.home_score,
+                    away_score: sportradarData.away_score,
+                    batting_scorecard: sportradarData.batting_scorecard || [],
+                    bowling_scorecard: sportradarData.bowling_scorecard || [],
+                    commentary: sportradarData.commentary || []
+                  });
+                }
+              }
+            } catch (mappingError) {
+              console.error(`❌ Error creating mapping for match ${matchId}:`, mappingError);
+            }
           }
           
           // Update odds in database - use a consistent matchId
@@ -112,23 +214,25 @@ const initOddsCronJob = (broadcastCallback) => {
         // Update each live match in the database
         for (const liveMatch of liveMatches) {
           try {
-            // Generate a consistent matchId based on team names
-            const matchId = `match_${liveMatch.home_team.replace(/[^a-zA-Z0-9]/g, '')}_${liveMatch.away_team.replace(/[^a-zA-Z0-9]/g, '')}`;
+            // Generate matchId in the exact format as seen in database
+            const matchId = `match_${liveMatch.home_team.replace(/\s+/g, '')}_${liveMatch.away_team.replace(/\s+/g, '')}`;
+            
+            console.log('Generated live match ID:', matchId); // Add logging to verify matchId format
             
             // Update the match status in the database
             const updatedMatch = await Match.findOneAndUpdate(
               { 
                 $or: [
                   { matchId },
-                  { team1: liveMatch.home_team, team2: liveMatch.away_team },
-                  { team1: liveMatch.home_team.trim(), team2: liveMatch.away_team.trim() }
+                  { home_team: liveMatch.home_team, away_team: liveMatch.away_team },
+                  { home_team: liveMatch.home_team.trim(), away_team: liveMatch.away_team.trim() }
                 ]
               },
               { 
-                status: 'in_play',
+                status: 'live',
                 matchId: matchId,
-                team1: liveMatch.home_team,
-                team2: liveMatch.away_team,
+                home_team: liveMatch.home_team,
+                away_team: liveMatch.away_team,
                 scheduled: liveMatch.scheduled || new Date()
               },
               { new: true, upsert: true }
@@ -161,6 +265,12 @@ const initOddsCronJob = (broadcastCallback) => {
     } catch (error) {
       console.error('❌ Error in live matches cron job:', error);
     }
+  });
+
+  // Run match mapping every hour
+  cron.schedule('0 * * * *', async () => {
+    console.log('🔄 Running match mapping cron job...');
+    await mapAllMatchesToSportradar();
   });
 
   console.log('✅ Initialized WebSocket odds update service');

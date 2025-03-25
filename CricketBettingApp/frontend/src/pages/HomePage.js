@@ -78,16 +78,51 @@ const HomePage = () => {
       setLoading(true);
       setError(null);
       const data = await getLiveMatches();
-      // Ensure we're getting fresh data by completely replacing the state
-      setMatches(data || []);
+      
+      // Process the matches to ensure correct status
+      const processedMatches = (data || []).map(match => {
+        const matchDate = new Date(match.scheduled);
+        const now = new Date();
+        const status = (match.status || '').toLowerCase();
+        const fourHoursAgo = new Date(now.getTime() - (4 * 60 * 60 * 1000));
+
+        // If the match is in the past, mark it as completed unless it's explicitly live
+        if (matchDate < fourHoursAgo && !['in_play', 'live', 'started'].includes(status)) {
+          return {
+            ...match,
+            status: 'completed'
+          };
+        }
+        
+        // Handle pending matches
+        if (status === 'pending') {
+          if (matchDate > now) {
+            return {
+              ...match,
+              status: 'scheduled'
+            };
+          } else if (matchDate < fourHoursAgo) {
+            return {
+              ...match,
+              status: 'completed'
+            };
+          }
+        }
+        
+        return match;
+      });
+
+      setMatches(prevMatches => {
+        const hasChanges = JSON.stringify(prevMatches) !== JSON.stringify(processedMatches);
+        return hasChanges ? processedMatches : prevMatches;
+      });
+      
       setLastUpdate(new Date());
       setLoading(false);
     } catch (error) {
       console.error('Error fetching matches:', error);
       setError('Failed to load matches');
       setLoading(false);
-      // Clear matches on error to prevent showing stale data
-      setMatches([]);
     }
   };
 
@@ -101,39 +136,52 @@ const HomePage = () => {
     // Subscribe to updates
     const unsubscribe = wsService.subscribe((updatedOdds) => {
       setMatches(prevMatches => {
-        // Create a new array with only matches that exist in the updated odds
-        const updatedMatches = prevMatches
-          .map(match => {
-            const updatedOdd = updatedOdds.find(odd => odd.matchId === match.id);
-            if (updatedOdd) {
-              return {
-                ...match,
-                home_odds: updatedOdd.homeOdds,
-                away_odds: updatedOdd.awayOdds,
-                bookmaker: updatedOdd.bookmaker,
-                lastUpdated: new Date()
-              };
-            }
-            return null; // Return null for matches that no longer exist
-          })
-          .filter(match => match !== null); // Remove null entries
+        const updatedMatches = prevMatches.map(match => {
+          const updatedOdd = updatedOdds.find(odd => odd.matchId === match.id);
+          if (updatedOdd) {
+            // Preserve existing match data, only update odds
+            return {
+              ...match,
+              home_odds: updatedOdd.homeOdds,
+              away_odds: updatedOdd.awayOdds,
+              bookmaker: updatedOdd.bookmaker,
+              lastUpdated: new Date(),
+              // Preserve the original status if it's a future match
+              status: match.scheduled > new Date() ? 'scheduled' : match.status
+            };
+          }
+          return match;
+        });
 
-        return updatedMatches;
+        // Only update if there are actual changes
+        const hasChanges = JSON.stringify(prevMatches) !== JSON.stringify(updatedMatches);
+        return hasChanges ? updatedMatches : prevMatches;
       });
       setLastUpdate(new Date());
     });
 
-    // Set up periodic refresh
+    // Set up periodic refresh with a longer interval
     const refreshInterval = setInterval(() => {
-      fetchMatches();
-    }, 30000); // Refresh every 30 seconds
+      // Only fetch if it's been more than 5 minutes since the last update
+      const now = new Date();
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+      if (lastUpdate < fiveMinutesAgo) {
+        fetchMatches();
+      }
+    }, 60000);
 
-    // Cleanup
+    // Cleanup function
     return () => {
       unsubscribe();
       clearInterval(refreshInterval);
     };
-  }, []);
+  }, []); // Empty dependency array
+
+  // Add lastUpdate to the dependency array of useEffect
+  useEffect(() => {
+    // This effect will run when lastUpdate changes
+    console.log('Last update:', lastUpdate);
+  }, [lastUpdate]);
 
   // Helper function to navigate to betting page
   const handleBetNow = (match) => {
@@ -154,29 +202,101 @@ const HomePage = () => {
 
   // Filter matches based on active tab
   const filteredMatches = matches.filter(match => {
+    // Remove matches with missing essential data
+    if (!match.home_team || !match.away_team || !match.scheduled) {
+      return false;
+    }
+
+    const status = (match.status || '').toLowerCase();
+    const matchDate = new Date(match.scheduled);
+    const now = new Date();
+    
+    // Debug logging for match status
+    console.log(`Filtering match: ${match.home_team} vs ${match.away_team}`, {
+      status,
+      scheduled: matchDate,
+      isPast: matchDate < now,
+      tab: activeTab
+    });
+    
     if (activeTab === 'live') {
-      // More comprehensive status checking for live matches
-      const status = (match.status || '').toLowerCase();
-      return status === 'in_play' || 
-             status === 'started' || 
-             status === 'live' || 
-             status === 'inprogress' || 
-             status === 'in progress';
+      // Only show matches that are actually live and within the valid time window
+      const twoHoursAgo = new Date(now.getTime() - (2 * 60 * 60 * 1000));
+      const fourHoursAhead = new Date(now.getTime() + (4 * 60 * 60 * 1000));
+      
+      return (status === 'in_play' || 
+              status === 'started' || 
+              status === 'live') &&
+              matchDate >= twoHoursAgo &&
+              matchDate <= fourHoursAhead;
     } else if (activeTab === 'upcoming') {
-      const status = (match.status || '').toLowerCase();
-      return status === 'not_started' || 
-             status === 'scheduled' || 
-             status === 'pending' || 
-             status === 'created';
+      // Show future matches that aren't completed
+      // Include matches with 'scheduled' status or future dates
+      return (matchDate > now || 
+              status === 'not_started' || 
+              status === 'scheduled' || 
+              status === 'pending' || 
+              status === 'created') &&
+              !['completed', 'closed', 'finished', 'ended'].includes(status);
     } else if (activeTab === 'recent') {
-      const status = (match.status || '').toLowerCase();
-      return status === 'closed' || 
+      // Show matches that are either:
+      // 1. Explicitly marked as completed/finished/etc
+      // 2. In the past (more than 4 hours ago)
+      const fourHoursAgo = new Date(now.getTime() - (4 * 60 * 60 * 1000));
+      
+      return status === 'completed' || 
+             status === 'closed' || 
              status === 'finished' || 
-             status === 'completed' || 
-             status === 'ended';
+             status === 'ended' ||
+             matchDate < fourHoursAgo;
     }
     return true;
   });
+
+  // Get featured matches (first 3 upcoming or live matches)
+  const featuredMatches = matches
+    .filter(match => {
+      const status = (match.status || '').toLowerCase();
+      const matchDate = new Date(match.scheduled);
+      const now = new Date();
+      
+      // Check if match has required data
+      if (!match.home_team || !match.away_team || !match.scheduled) {
+        console.log('Filtering out match due to missing data:', match.id);
+        return false;
+      }
+
+      // Don't show completed matches in featured section
+      if (['completed', 'closed', 'finished', 'ended'].includes(status)) {
+        console.log('Filtering out completed match:', match.id);
+        return false;
+      }
+
+      // Include both live and upcoming matches with valid odds
+      return (
+        // Live matches
+        ((['in_play', 'started', 'live'].includes(status)) ||
+        // Upcoming matches
+        (['scheduled', 'pending', 'not_started', 'created'].includes(status) && matchDate > now)) &&
+        // Ensure odds are available
+        match.home_odds &&
+        match.away_odds
+      );
+    })
+    .sort((a, b) => {
+      const statusA = (a.status || '').toLowerCase();
+      const statusB = (b.status || '').toLowerCase();
+      const isLiveA = ['in_play', 'started', 'live'].includes(statusA);
+      const isLiveB = ['in_play', 'started', 'live'].includes(statusB);
+      
+      // Show live matches first
+      if (isLiveA && !isLiveB) return -1;
+      if (!isLiveA && isLiveB) return 1;
+      
+      // Then sort by scheduled time
+      return new Date(a.scheduled) - new Date(b.scheduled);
+    })
+    .slice(0, 3);
 
   // Further filter by league and date if selected
   const displayedMatches = filteredMatches.filter(match => {
@@ -207,11 +327,6 @@ const HomePage = () => {
     
     return matchesLeague && matchesDate;
   });
-
-  // Get featured matches (first 3 live or upcoming matches)
-  const featuredMatches = matches
-    .filter(match => match.status !== 'closed' && match.status !== 'finished')
-    .slice(0, 3);
 
   // Add a dynamic CSS style for team colors
   const getTeamColorStyle = (teamName, teamColor) => {
@@ -370,20 +485,26 @@ const HomePage = () => {
           <button
             className={`tab ${activeTab === 'live' ? 'active' : ''}`}
             onClick={() => setActiveTab('live')}
+            data-count={matches.filter(m => ['in_play', 'live', 'started'].includes(m.status?.toLowerCase())).length}
           >
-            Live Matches
+            <span>Live Matches</span>
           </button>
           <button
             className={`tab ${activeTab === 'upcoming' ? 'active' : ''}`}
             onClick={() => setActiveTab('upcoming')}
+            data-count={matches.filter(m => {
+              const status = (m.status || '').toLowerCase();
+              const matchDate = new Date(m.scheduled);
+              return matchDate > new Date() && !['completed', 'closed', 'finished'].includes(status);
+            }).length}
           >
-            Upcoming Matches
+            <span>Upcoming Matches</span>
           </button>
           <button
             className={`tab ${activeTab === 'recent' ? 'active' : ''}`}
             onClick={() => setActiveTab('recent')}
           >
-            Completed Matches
+            <span>Completed Matches</span>
           </button>
         </div>
 
@@ -495,7 +616,11 @@ const HomePage = () => {
                     Details
                   </button>
                   
-                  {match.status !== 'closed' && match.status !== 'finished' && (
+                  {/* Only show bet button for non-completed matches */}
+                  {(match.status || '').toLowerCase() !== 'closed' && 
+                   (match.status || '').toLowerCase() !== 'finished' && 
+                   (match.status || '').toLowerCase() !== 'completed' && 
+                   (match.status || '').toLowerCase() !== 'ended' && (
                     <button 
                       className="bet-button"
                       onClick={() => handleBetNow(match)}

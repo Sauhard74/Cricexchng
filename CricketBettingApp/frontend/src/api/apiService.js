@@ -60,9 +60,26 @@ export const getMatchesByDate = async (date) => {
 // ✅ Fetch Match Details
 export const getMatchDetails = async (matchId) => {
   try {
-    const { data } = await apiClient.get(`/match/${matchId}`);
+    console.log('🔍 [API] Fetching match details:', {
+      raw_id: matchId,
+      encoded: encodeURIComponent(matchId)
+    });
+
+    // Don't clean the match ID, just encode it for URL safety
+    const encodedMatchId = encodeURIComponent(matchId);
+    console.log('🔍 [API] Encoded match ID:', encodedMatchId);
+
+    const { data } = await apiClient.get(`/match/${encodedMatchId}`);
+    
+    console.log('✅ [API] Received match data:', {
+      teams: data ? `${data.home_team} vs ${data.away_team}` : 'No data',
+      has_batting: data?.batting_scorecard?.home_team?.length > 0,
+      has_bowling: data?.bowling_scorecard?.home_team?.length > 0
+    });
+
     return data;
   } catch (error) {
+    console.error('❌ [API] Error fetching match details:', error);
     throw error.response?.data?.error || "Failed to fetch match details";
   }
 };

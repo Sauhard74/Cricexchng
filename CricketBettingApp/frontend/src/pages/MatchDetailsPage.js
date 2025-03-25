@@ -1,175 +1,287 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { getMatchDetails } from '../api/apiService';
 import '../styles/pages/MatchDetailsPage.css';
 
 const MatchDetailsPage = () => {
-  const { matchId } = useParams();
-  const [matchDetails, setMatchDetails] = useState(null);
+  const [match, setMatch] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('scorecard');
+  const { matchId } = useParams();
 
   useEffect(() => {
     const fetchMatchDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/match/${matchId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setMatchDetails(data);
-        } else {
-          console.error('Failed to fetch match details');
+        setLoading(true);
+        setError(null);
+        
+        if (!matchId) {
+          throw new Error('Match ID is required');
         }
+
+        // Log the match ID we're trying to fetch
+        console.log('🔍 [PAGE] Fetching details for match:', {
+          raw_id: matchId,
+          encoded_id: encodeURIComponent(matchId)
+        });
+
+        const data = await getMatchDetails(matchId);
+        
+        if (!data) {
+          throw new Error('No match data received');
+        }
+
+        console.log('✅ [PAGE] Received match data:', {
+          teams: `${data.home_team} vs ${data.away_team}`,
+          has_batting: data.batting_scorecard?.home_team?.length > 0,
+          has_bowling: data.bowling_scorecard?.home_team?.length > 0,
+          status: data.status
+        });
+
+        setMatch(data);
       } catch (error) {
-        console.error('Error fetching match details:', error);
+        console.error('❌ [PAGE] Error fetching match details:', error);
+        setError(error.message || 'Failed to load match details. Please try again later.');
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchMatchDetails();
+    if (matchId) {
+      fetchMatchDetails();
+    }
   }, [matchId]);
 
-  if (!matchDetails) {
-    return <div className="match-details-container">Loading match details...</div>;
-  }
-
+  // Helper function to format date
   const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return isNaN(date.getTime()) ? 'Invalid Date' : date.toLocaleString();
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short'
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Date not available';
+    }
   };
 
-  // ✅ Render Batting Table
-  const renderBattingTable = (team, teamName) => (
-    <div className="scorecard-section">
-      <h3>{teamName} Batting</h3>
-      <table>
+  // Helper function to render batting table
+  const renderBattingTable = (battingData, teamName) => {
+    if (!battingData || battingData.length === 0) {
+      return (
+        <div className="no-data-message">
+          No batting data available for {teamName}
+        </div>
+      );
+    }
+
+    return (
+      <table className="batting-table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Runs</th>
-            <th>Balls Faced</th>
-            <th>Fours</th>
-            <th>Sixes</th>
-            <th>Strike Rate</th>
+            <th>Batsman</th>
+            <th>R</th>
+            <th>B</th>
+            <th>4s</th>
+            <th>6s</th>
+            <th>SR</th>
             <th>Dismissal</th>
           </tr>
         </thead>
         <tbody>
-          {team?.length > 0 ? (
-            team.map((player, index) => (
-              <tr key={index}>
-                <td>{player.name || '-'}</td>
-                <td>{player.runs || '-'}</td>
-                <td>{player.balls_faced || '-'}</td>
-                <td>{player.fours || '-'}</td>
-                <td>{player.sixes || '-'}</td>
-                <td>{player.strike_rate || '-'}</td>
-                <td>{player.dismissal || '-'}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="7">No batting data available</td>
+          {battingData.map((batsman, index) => (
+            <tr key={`${batsman.name}-${index}`}>
+              <td>{batsman.name}</td>
+              <td>{batsman.runs}</td>
+              <td>{batsman.balls_faced}</td>
+              <td>{batsman.fours}</td>
+              <td>{batsman.sixes}</td>
+              <td>{batsman.strike_rate}</td>
+              <td>{batsman.dismissal}</td>
             </tr>
-          )}
+          ))}
         </tbody>
       </table>
-    </div>
-  );
+    );
+  };
 
-  // ✅ Render Bowling Table (New)
-  const renderBowlingTable = (team, teamName) => (
-    <div className="scorecard-section">
-      <h3>{teamName} Bowling</h3>
-      <table>
+  // Helper function to render bowling table
+  const renderBowlingTable = (bowlingData, teamName) => {
+    if (!bowlingData || bowlingData.length === 0) {
+      return (
+        <div className="no-data-message">
+          No bowling data available for {teamName}
+        </div>
+      );
+    }
+
+    return (
+      <table className="bowling-table">
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Overs</th>
-            <th>Maidens</th>
-            <th>Runs Conceded</th>
-            <th>Wickets</th>
-            <th>Economy</th>
+            <th>Bowler</th>
+            <th>O</th>
+            <th>M</th>
+            <th>R</th>
+            <th>W</th>
+            <th>Econ</th>
+            <th>Extras</th>
           </tr>
         </thead>
         <tbody>
-          {team?.length > 0 ? (
-            team.map((player, index) => (
-              <tr key={index}>
-                <td>{player.name || '-'}</td>
-                <td>{player.overs || '-'}</td>
-                <td>{player.maidens || '-'}</td>
-                <td>{player.runs_conceded || '-'}</td>
-                <td>{player.wickets || '-'}</td>
-                <td>{player.economy || '-'}</td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="6">No bowling data available</td>
+          {bowlingData.map((bowler, index) => (
+            <tr key={`${bowler.name}-${index}`}>
+              <td>{bowler.name}</td>
+              <td>{bowler.overs}</td>
+              <td>{bowler.maidens}</td>
+              <td>{bowler.runs_conceded}</td>
+              <td>{bowler.wickets}</td>
+              <td>{bowler.economy}</td>
+              <td>{(bowler.wides || 0) + (bowler.no_balls || 0)}</td>
             </tr>
-          )}
+          ))}
         </tbody>
       </table>
-    </div>
-  );
+    );
+  };
 
-  // ✅ Render Commentary
-  const renderCommentary = () => (
-    <div className="commentary-section">
-      {matchDetails.commentary?.length > 0 ? (
-        matchDetails.commentary.map((comment, index) => (
-          <div key={index} className="commentary-item">
-            <strong>Over: {comment.over}, Ball: {comment.ball}</strong><br />
-            Batsman: {comment.batsman} | Bowler: {comment.bowler} <br />
-            Runs: {comment.runs} <br />
-            {comment.description}
-          </div>
-        ))
-      ) : (
-        <p>No commentary available</p>
-      )}
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="match-details-container">
+        <div className="loading-spinner">
+          <div className="spinner"></div>
+          <p>Loading match details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="match-details-container">
+        <div className="error-message">
+          <i className="error-icon">⚠️</i>
+          <p>{error}</p>
+          <button 
+            className="retry-button"
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!match) {
+    return (
+      <div className="match-details-container">
+        <div className="error-message">
+          <i className="error-icon">❌</i>
+          <p>Match not found</p>
+          <button 
+            className="back-button"
+            onClick={() => window.history.back()}
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="match-details-container">
-      {/* ✅ Match Info */}
-      <div className="match-info">
-        <h2>{matchDetails.home_team || '-'} vs {matchDetails.away_team || '-'}</h2>
-        <p>📅 <strong>Date:</strong> {formatDate(matchDetails.scheduled)}</p>
-        <p>📍 <strong>Venue:</strong> {matchDetails.venue || '-'}</p>
-        <p>🔥 <strong>Status:</strong> {matchDetails.status || '-'}</p>
-        <p>🏆 <strong>Toss:</strong> {matchDetails.toss_winner ? `${matchDetails.toss_winner} chose to ${matchDetails.toss_decision}` : '-'}</p>
-        <p>🥇 <strong>Winner:</strong> {matchDetails.match_winner || '-'}</p>
-        <p>🏏 <strong>Score:</strong> {matchDetails.home_score || '-'} - {matchDetails.away_score || '-'}</p>
+      <div className="match-header">
+        <h1>{match.home_team} vs {match.away_team}</h1>
+        <div className="match-meta">
+          <span className="match-date">{formatDate(match.scheduled)}</span>
+          <span className={`match-status status-${match.status?.toLowerCase()}`}>
+            {match.status}
+          </span>
+          <span className="match-venue">{match.venue || 'Venue TBD'}</span>
+        </div>
+        {match.toss_winner && (
+          <div className="toss-info">
+            Toss: {match.toss_winner} won and chose to {match.toss_decision}
+          </div>
+        )}
+      </div>
 
-        {/* ✅ Tabs */}
+      <div className="match-score">
+        <div className="team-score home">
+          <h3>{match.home_team}</h3>
+          <span className="score">{match.home_score || 'Yet to bat'}</span>
+        </div>
+        <div className="team-score away">
+          <h3>{match.away_team}</h3>
+          <span className="score">{match.away_score || 'Yet to bat'}</span>
+        </div>
+      </div>
+
+      <div className="match-content">
         <div className="tab-container">
           <button
-            className={activeTab === 'scorecard' ? 'active' : ''}
+            className={`tab ${activeTab === 'scorecard' ? 'active' : ''}`}
             onClick={() => setActiveTab('scorecard')}
           >
             Scorecard
           </button>
           <button
-            className={activeTab === 'commentary' ? 'active' : ''}
+            className={`tab ${activeTab === 'commentary' ? 'active' : ''}`}
             onClick={() => setActiveTab('commentary')}
           >
             Commentary
           </button>
         </div>
+
+        {activeTab === 'scorecard' ? (
+          <div className="scorecard">
+            <div className="team-innings">
+              <h2>{match.home_team} Innings</h2>
+              {renderBattingTable(match.batting_scorecard?.home_team, match.home_team)}
+              <h3>Bowling</h3>
+              {renderBowlingTable(match.bowling_scorecard?.away_team, match.away_team)}
+            </div>
+            <div className="team-innings">
+              <h2>{match.away_team} Innings</h2>
+              {renderBattingTable(match.batting_scorecard?.away_team, match.away_team)}
+              <h3>Bowling</h3>
+              {renderBowlingTable(match.bowling_scorecard?.home_team, match.home_team)}
+            </div>
+          </div>
+        ) : (
+          <div className="commentary">
+            {match.commentary && match.commentary.length > 0 ? (
+              <div className="commentary-list">
+                {match.commentary.map((item, index) => (
+                  <div key={index} className="commentary-item">
+                    <div className="over-ball">
+                      {item.over}.{item.ball}
+                    </div>
+                    <div className="commentary-text">
+                      <strong>{item.bowler}</strong> to <strong>{item.batsman}</strong>
+                      <br />
+                      {item.description}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-data-message">
+                No commentary available for this match
+              </div>
+            )}
+          </div>
+        )}
       </div>
-
-      {/* ✅ Render Scorecard and Bowling */}
-      {activeTab === 'scorecard' && (
-        <>
-          {renderBattingTable(matchDetails.batting_scorecard?.home_team, matchDetails.home_team)}
-          {renderBowlingTable(matchDetails.bowling_scorecard?.home_team, matchDetails.home_team)}
-          {renderBattingTable(matchDetails.batting_scorecard?.away_team, matchDetails.away_team)}
-          {renderBowlingTable(matchDetails.bowling_scorecard?.away_team, matchDetails.away_team)}
-        </>
-      )}
-
-      {/* ✅ Render Commentary */}
-      {activeTab === 'commentary' && renderCommentary()}
     </div>
   );
 };

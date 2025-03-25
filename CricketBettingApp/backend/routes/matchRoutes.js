@@ -5,41 +5,114 @@ const Match = require("../models/Match");
 const Bet = require("../models/Bet");
 const User = require("../models/User");
 const Odds = require("../models/Odds");
+const MatchMapping = require("../models/MatchMapping");
 
 const router = express.Router();
 
+// Helper function to find Sportradar match ID
+async function findSportradarMatchId(oddsMatchId) {
+    try {
+        const mapping = await MatchMapping.findOne({ oddsMatchId });
+        if (mapping) {
+            return mapping.sportradarMatchId;
+        }
+        
+        // If no mapping found, try to find by teams and date
+        const odds = await Odds.findOne({ matchId: oddsMatchId });
+        if (!odds) return null;
+        
+        // Get matches from Sportradar for the same date
+        const matchDate = new Date(odds.commence);
+        const dateStr = matchDate.toISOString().split('T')[0];
+        const sportradarMatches = await fetchMatches(dateStr);
+        
+        // Find matching match by teams
+        const matchingMatch = sportradarMatches.find(match => {
+            const teamsMatch = (
+                (match.home_team === odds.homeTeam && match.away_team === odds.awayTeam) ||
+                (match.home_team === odds.awayTeam && match.away_team === odds.homeTeam)
+            );
+            return teamsMatch;
+        });
+        
+        if (matchingMatch) {
+            // Create mapping for future use
+            await MatchMapping.create({
+                oddsMatchId,
+                sportradarMatchId: matchingMatch.id,
+                homeTeam: odds.homeTeam,
+                awayTeam: odds.awayTeam,
+                scheduled: odds.commence
+            });
+            return matchingMatch.id;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error("Error finding Sportradar match ID:", error);
+        return null;
+    }
+}
 
 // ✅ Route to Fetch Only Live Matches with Odds
 router.get("/matches/live", async (req, res) => {
     try {
-        console.log('🟡 [ROUTE HIT] Fetching live matches with odds');
+        console.log('🟡 [ROUTE HIT] Fetching live and upcoming matches with odds');
         
-        // Instead, get all odds (which should now be one per match)
+        // Get all odds (which should now be one per match)
         const odds = await Odds.find();
         
-        // Map to the format expected by the frontend
-        const matches = odds.map(odd => ({
-            id: odd.matchId,
-            home_team: odd.homeTeam,
-            away_team: odd.awayTeam,
-            home_odds: odd.homeOdds,
-            away_odds: odd.awayOdds,
-            bookmaker: odd.bookmaker,
-            scheduled: odd.commence,
-            status: odd.status,
-            lastUpdated: odd.lastUpdated,
-            home_team_color: odd.homeTeamColor,
-            away_team_color: odd.awayTeamColor
-        }));
+        // Process matches and determine correct status
+        const matches = odds.map(odd => {
+            const matchDate = new Date(odd.commence);
+            const now = new Date();
+            const fourHoursAgo = new Date(now.getTime() - (4 * 60 * 60 * 1000));
+            const status = (odd.status || '').toLowerCase();
+
+            // Determine the correct status
+            let matchStatus = status;
+            
+            // If match is in the past (more than 4 hours ago), mark as completed
+            if (matchDate < fourHoursAgo) {
+                matchStatus = 'completed';
+            } 
+            // If match is in the future, explicitly mark as scheduled
+            else if (matchDate > now) {
+                matchStatus = 'scheduled';
+                console.log(`Found upcoming match: ${odd.homeTeam} vs ${odd.awayTeam} at ${matchDate}`);
+            }
+            // For matches within the last 4 hours that are marked as live
+            else if (['live', 'in_play', 'started'].includes(status)) {
+                matchStatus = 'live';
+            }
+
+            return {
+                id: odd.matchId,
+                home_team: odd.homeTeam,
+                away_team: odd.awayTeam,
+                home_odds: odd.homeOdds,
+                away_odds: odd.awayOdds,
+                bookmaker: odd.bookmaker,
+                scheduled: odd.commence,
+                status: matchStatus,
+                lastUpdated: odd.lastUpdated,
+                home_team_color: odd.homeTeamColor,
+                away_team_color: odd.awayTeamColor
+            };
+        });
         
-        console.log(`📊 Found ${matches.length} matches with odds`);
+        console.log(`📊 Found ${matches.length} total matches`);
+        console.log('Match breakdown:', matches.reduce((acc, m) => {
+            acc[m.status] = (acc[m.status] || 0) + 1;
+            return acc;
+        }, {}));
+        
         res.json(matches);
     } catch (error) {
-        console.error('❌ Error fetching live matches:', error);
+        console.error('❌ Error fetching matches:', error);
         res.status(500).json({ error: 'Server error' });
     }
 });
-
 
 router.get("/matches/:date", async (req, res) => {
     try {
@@ -125,48 +198,134 @@ router.get("/matches/:date", async (req, res) => {
 
 // Add this route to get a single match by ID
 router.get("/match/:matchId", async (req, res) => {
-  try {
-    const { matchId } = req.params;
-    console.log(`🟡 [ROUTE HIT] Fetching match details for ID: ${matchId}`);
-    
-    // Get all matches first (for debugging)
-    const allMatches = await Odds.find({});
-    console.log('Available match IDs:', allMatches.map(m => m.matchId));
-    
-    // Find the match with exact matchId
-    const matchFromOdds = await Odds.findOne({ matchId });
-    
-    if (!matchFromOdds) {
-      console.log(`⚠️ No match found with ID: ${matchId}`);
-      return res.status(404).json({ 
-        error: "Match not found",
-        searchedId: matchId,
-        availableIds: allMatches.map(m => m.matchId)
-      });
+    try {
+        const { matchId } = req.params;
+        const decodedMatchId = decodeURIComponent(matchId);
+        
+        console.log(`🔍 [MATCH ROUTE] Received request for match:`, {
+            raw_id: matchId,
+            decoded_id: decodedMatchId
+        });
+
+        // First try to get match from Odds collection using exact match ID
+        const matchFromOdds = await Odds.findOne({ matchId: decodedMatchId });
+        
+        console.log('📊 [MATCH ROUTE] Odds lookup result:', {
+            found: !!matchFromOdds,
+            matchId: matchFromOdds?.matchId,
+            teams: matchFromOdds ? `${matchFromOdds.homeTeam} vs ${matchFromOdds.awayTeam}` : 'N/A'
+        });
+
+        if (!matchFromOdds) {
+            console.log('❌ [MATCH ROUTE] Match not found in Odds collection:', decodedMatchId);
+            return res.status(404).json({ 
+                error: 'Match not found',
+                details: 'No match found in odds database'
+            });
+        }
+
+        // Initialize response object with odds data
+        let enrichedMatch = {
+            id: matchFromOdds.matchId,
+            home_team: matchFromOdds.homeTeam,
+            away_team: matchFromOdds.awayTeam,
+            scheduled: matchFromOdds.commence,
+            status: matchFromOdds.status || 'scheduled',
+            home_odds: matchFromOdds.homeOdds,
+            away_odds: matchFromOdds.awayOdds,
+            bookmaker: matchFromOdds.bookmaker,
+            venue: 'TBD',
+            batting_scorecard: {
+                home_team: [],
+                away_team: []
+            },
+            bowling_scorecard: {
+                home_team: [],
+                away_team: []
+            },
+            commentary: []
+        };
+
+        try {
+            // Try to find Sportradar mapping
+            const mapping = await MatchMapping.findOne({ 
+                $or: [
+                    { oddsMatchId: decodedMatchId },
+                    { oddsMatchId: matchId }
+                ]
+            });
+            
+            console.log('🔍 [MATCH ROUTE] Mapping lookup result:', {
+                found: !!mapping,
+                sportradarId: mapping?.sportradarMatchId
+            });
+
+            if (mapping) {
+                console.log('✅ [MATCH ROUTE] Found Sportradar mapping:', mapping.sportradarMatchId);
+                const sportradarData = await fetchMatchDetails(mapping.sportradarMatchId);
+
+                if (sportradarData) {
+                    console.log('✅ [MATCH ROUTE] Successfully fetched Sportradar data');
+                    enrichedMatch = {
+                        ...enrichedMatch,
+                        venue: sportradarData.venue,
+                        status: sportradarData.status || enrichedMatch.status,
+                        toss_winner: sportradarData.toss_winner,
+                        toss_decision: sportradarData.toss_decision,
+                        match_winner: sportradarData.match_winner,
+                        home_score: sportradarData.home_score,
+                        away_score: sportradarData.away_score,
+                        batting_scorecard: sportradarData.batting_scorecard || enrichedMatch.batting_scorecard,
+                        bowling_scorecard: sportradarData.bowling_scorecard || enrichedMatch.bowling_scorecard,
+                        commentary: sportradarData.commentary || []
+                    };
+                }
+            } else {
+                console.log('🔄 [MATCH ROUTE] No existing mapping, attempting to find match in Sportradar...');
+                const sportradarMatchId = await findSportradarMatchId(decodedMatchId);
+
+                if (sportradarMatchId) {
+                    console.log('✅ [MATCH ROUTE] Found and mapped Sportradar match:', sportradarMatchId);
+                    const sportradarData = await fetchMatchDetails(sportradarMatchId);
+
+                    if (sportradarData) {
+                        enrichedMatch = {
+                            ...enrichedMatch,
+                            venue: sportradarData.venue,
+                            status: sportradarData.status || enrichedMatch.status,
+                            toss_winner: sportradarData.toss_winner,
+                            toss_decision: sportradarData.toss_decision,
+                            match_winner: sportradarData.match_winner,
+                            home_score: sportradarData.home_score,
+                            away_score: sportradarData.away_score,
+                            batting_scorecard: sportradarData.batting_scorecard || enrichedMatch.batting_scorecard,
+                            bowling_scorecard: sportradarData.bowling_scorecard || enrichedMatch.bowling_scorecard,
+                            commentary: sportradarData.commentary || []
+                        };
+                    }
+                }
+            }
+        } catch (sportradarError) {
+            console.error('⚠️ [MATCH ROUTE] Error fetching Sportradar data:', sportradarError);
+            // Continue with basic match data if Sportradar fetch fails
+        }
+
+        console.log('🏁 [MATCH ROUTE] Sending response with data structure:', {
+            has_odds: true,
+            has_sportradar: enrichedMatch.batting_scorecard.home_team.length > 0,
+            status: enrichedMatch.status,
+            teams: `${enrichedMatch.home_team} vs ${enrichedMatch.away_team}`
+        });
+
+        res.json(enrichedMatch);
+    } catch (error) {
+        console.error('❌ [MATCH ROUTE] Error in match details route:', error);
+        console.error('Stack:', error.stack);
+        res.status(500).json({ 
+            error: 'Failed to fetch match details',
+            message: error.message
+        });
     }
-    
-    // Create a match object from the odds data
-    const matchDetails = {
-      id: matchFromOdds.matchId,
-      home_team: matchFromOdds.homeTeam,
-      away_team: matchFromOdds.awayTeam,
-      league: "Cricket League",
-      venue: "TBD",
-      scheduled: matchFromOdds.commence || new Date().toISOString(),
-      status: matchFromOdds.status || "not_started",
-      home_odds: matchFromOdds.homeOdds,
-      away_odds: matchFromOdds.awayOdds,
-      bookmaker: matchFromOdds.bookmaker,
-      home_team_color: matchFromOdds.homeTeamColor,
-      away_team_color: matchFromOdds.awayTeamColor
-    };
-    
-    console.log("✅ [ROUTE SUCCESS] Match details sent:", matchDetails);
-    res.json(matchDetails);
-  } catch (error) {
-    console.error("❌ [ROUTE ERROR] Failed to fetch match details:", error.message);
-    res.status(500).json({ error: "Failed to retrieve match details" });
-  }
 });
 
 // ✅ New endpoint for live scores

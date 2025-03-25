@@ -1,41 +1,127 @@
 const axios = require("axios");
+require('dotenv').config();
 
-const BASE_URL = "https://api.sportradar.com/cricket-t2/en";
-const API_KEY = "YtzgWaXRBBJ4vbjBbCP2U7IShSvkUNPMdYRyb1vZ";
+const BASE_URL = process.env.SPORTRADAR_BASE_URL || "https://api.sportradar.com/cricket-t2/en";
+const API_KEY = process.env.SPORTRADAR_API_KEY;
+
+// Add rate limiting delay
+const RATE_LIMIT_DELAY = 1000; // 1 second delay between requests
+
+if (!API_KEY) {
+    console.error("❌ SPORTRADAR_API_KEY is not set in environment variables");
+}
+
+// Helper function to add delay between requests
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchMatches(date) {
     try {
+        if (!API_KEY) throw new Error("Sportradar API key not configured");
+        
         const scheduleUrl = `${BASE_URL}/schedules/${date}/results.json?api_key=${API_KEY}`;
         console.log(`🔗 Fetching Schedule: ${scheduleUrl}`);
         const scheduleResponse = await axios.get(scheduleUrl);
 
         if (!scheduleResponse.data.results) throw new Error("Invalid schedule data");
 
-        const matches = await Promise.all(
-            scheduleResponse.data.results.map(async (match) => {
+        // Process matches sequentially to avoid rate limiting
+        const matches = [];
+        for (const match of scheduleResponse.data.results) {
+            try {
+                await delay(RATE_LIMIT_DELAY);
                 const matchId = match.sport_event.id;
                 const matchDetails = await fetchMatchDetails(matchId);
-                return matchDetails;  // This could be null if fetching fails
-            })
-        );
+                if (matchDetails) {
+                    matches.push(matchDetails);
+                }
+            } catch (error) {
+                console.error(`Failed to fetch match details: ${error.message}`);
+            }
+        }
 
-        // **🔥 Remove null matches**
-        return matches.filter(match => match !== null);
+        return matches;
     } catch (error) {
         console.error("❌ [SERVICE ERROR] Fetching matches failed:", error.message);
+        if (error.response) {
+            console.error("API Response:", error.response.data);
+            console.error("Status:", error.response.status);
+        }
         throw new Error("Failed to fetch match data");
     }
 }
 
 async function fetchMatchDetails(matchId) {
     try {
-        const url = `${BASE_URL}/matches/${matchId}/timeline.json?api_key=${API_KEY}`;
-        console.log(`🔗 Fetching Match Details: ${url}`);
+        if (!API_KEY) throw new Error("Sportradar API key not configured");
+
+        // Log the incoming match ID
+        console.log('🔍 [SPORTRADAR] Incoming Match ID:', matchId);
+
+        // If it's from our odds API format (e.g., "match-titans_punjabkings:1")
+        if (matchId.includes('match-') || matchId.includes('_')) {
+            console.log('🔄 [SPORTRADAR] Converting odds API match ID format');
+            
+            // Extract team names from the match ID
+            let teams = matchId;
+            
+            // Remove 'match-' prefix if present
+            teams = teams.replace('match-', '');
+            
+            // Split by underscore and take the first part (teams)
+            teams = teams.split('_')[0];
+            
+            // Convert to Sportradar format
+            if (teams) {
+                console.log('👥 [SPORTRADAR] Extracted teams:', teams);
+                
+                // Use Sportradar's format: sr:match:teams
+                // Keep the original ID as a fallback
+                const sportradarId = `sr:match:${teams}`;
+                console.log('🔄 [SPORTRADAR] Converted to:', sportradarId);
+                
+                // Try to fetch with Sportradar ID first
+                try {
+                    const result = await tryFetchMatch(sportradarId);
+                    if (result) {
+                        return result;
+                    }
+                } catch (error) {
+                    console.log('⚠️ Failed to fetch with Sportradar ID, using original:', error.message);
+                }
+            }
+        }
+
+        // If conversion failed or not needed, try with original ID
+        return await tryFetchMatch(matchId);
+    } catch (error) {
+        console.error("❌ [SPORTRADAR] Error in fetchMatchDetails:", error.message);
+        console.error("Stack:", error.stack);
+        return null;
+    }
+}
+
+// Helper function to try fetching match with a given ID
+async function tryFetchMatch(matchId) {
+    try {
+        const encodedMatchId = encodeURIComponent(matchId);
+        console.log('🔍 [SPORTRADAR] Trying with ID:', matchId);
+        
+        const url = `${BASE_URL}/matches/${encodedMatchId}/timeline.json?api_key=${API_KEY}`;
+        console.log(`🔗 [SPORTRADAR] Fetching Match Details: ${url}`);
+        
         const response = await axios.get(url);
         const match = response.data;
 
+        // Handle rate limiting
+        if (response.status === 429) {
+            console.log('⚠️ Rate limit hit, waiting before retry...');
+            await delay(RATE_LIMIT_DELAY * 2);
+            return await tryFetchMatch(matchId);
+        }
+
         if (!match || !match.sport_event) {
-            throw new Error("Invalid match response.");
+            console.error("❌ [SPORTRADAR] Invalid match response - missing sport_event");
+            return null;
         }
 
         // ✅ Extract Competitor Names
@@ -43,6 +129,8 @@ async function fetchMatchDetails(matchId) {
             id: c.id,
             name: c.name
         }));
+
+        console.log('🏏 Teams:', teams);
 
         const getTeamName = (teamId) => {
             const team = teams.find(t => t.id === teamId);
@@ -64,17 +152,23 @@ async function fetchMatchDetails(matchId) {
         const awayScore = scores[0]?.display_score || "N/A";
         const awayOvers = scores[0]?.display_overs || "N/A";
 
-        // ✅ Extract Batting Scorecard from `innings[].teams[].statistics.batting.players`
+        console.log('📊 Scores:', { homeScore, homeOvers, awayScore, awayOvers });
+
+        // ✅ Extract Batting Scorecard
         let battingScorecard = {
             home_team: [],
             away_team: []
         };
 
         if (match.statistics?.innings) {
-            match.statistics.innings.forEach(inning => {
+            console.log('📊 Processing innings data...');
+            match.statistics.innings.forEach((inning, idx) => {
+                console.log(`Processing inning ${idx + 1}`);
                 inning.teams.forEach(team => {
                     let teamName = getTeamName(team.id);
                     let battingPlayers = team.statistics?.batting?.players || [];
+
+                    console.log(`Processing batting for team: ${teamName}, found ${battingPlayers.length} players`);
 
                     battingPlayers.forEach(player => {
                         let batsman = {
@@ -87,8 +181,6 @@ async function fetchMatchDetails(matchId) {
                             dismissal: player.statistics?.dismissal?.type || "Not Out"
                         };
 
-                        console.log(`📊 [DEBUG] Batsman Data: ${JSON.stringify(batsman)}`);
-
                         if (teamName === homeTeam) {
                             battingScorecard.home_team.push(batsman);
                         } else {
@@ -97,19 +189,25 @@ async function fetchMatchDetails(matchId) {
                     });
                 });
             });
+        } else {
+            console.log('⚠️ No innings data found in match statistics');
         }
 
-        // ✅ Extract Bowling Scorecard from `innings[].teams[].statistics.bowling.players`
+        // ✅ Extract Bowling Scorecard
         let bowlingScorecard = {
             home_team: [],
             away_team: []
         };
 
         if (match.statistics?.innings) {
-            match.statistics.innings.forEach(inning => {
+            console.log('📊 Processing bowling statistics...');
+            match.statistics.innings.forEach((inning, idx) => {
+                console.log(`Processing bowling for inning ${idx + 1}`);
                 inning.teams.forEach(team => {
                     let teamName = getTeamName(team.id);
                     let bowlingPlayers = team.statistics?.bowling?.players || [];
+
+                    console.log(`Processing bowling for team: ${teamName}, found ${bowlingPlayers.length} players`);
 
                     bowlingPlayers.forEach(player => {
                         let bowler = {
@@ -123,8 +221,6 @@ async function fetchMatchDetails(matchId) {
                             no_balls: player.statistics?.no_balls || 0
                         };
 
-                        console.log(`📊 [DEBUG] Bowler Data: ${JSON.stringify(bowler)}`);
-
                         if (teamName === homeTeam) {
                             bowlingScorecard.home_team.push(bowler);
                         } else {
@@ -135,7 +231,7 @@ async function fetchMatchDetails(matchId) {
             });
         }
 
-        // ✅ Live Commentary Extraction (Correct Player Names)
+        // ✅ Live Commentary Extraction
         const commentary = match.timeline
             ?.filter(event => event.type === "ball") // Only get ball events
             .map(event => ({
@@ -146,6 +242,18 @@ async function fetchMatchDetails(matchId) {
                 bowler: event.bowling_params?.bowler?.name || "Unknown Bowler",
                 description: event.commentary?.text || "No description available"
             })) || [];
+
+        console.log('📊 Final Data Structure:', {
+            batting_players: {
+                home: battingScorecard.home_team.length,
+                away: battingScorecard.away_team.length
+            },
+            bowling_players: {
+                home: bowlingScorecard.home_team.length,
+                away: bowlingScorecard.away_team.length
+            },
+            commentary_entries: commentary.length
+        });
 
         return {
             id: matchId,
@@ -165,11 +273,10 @@ async function fetchMatchDetails(matchId) {
             commentary: commentary
         };
     } catch (error) {
-        console.error("❌ [SERVICE ERROR] Fetching match details failed:", error.message);
-        return null;
+        console.error("❌ [SPORTRADAR] Error in tryFetchMatch:", error.message);
+        throw error;
     }
 }
-
 
 async function fetchLiveMatches() {
     try {
