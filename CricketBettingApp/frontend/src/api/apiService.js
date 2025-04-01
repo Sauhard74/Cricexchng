@@ -57,7 +57,8 @@ export const getMatchesByDate = async (date) => {
   }
 };
 
-// ✅ Fetch Match Details
+// ✅ Fetch Match Details - Temporarily removed due to API limitations
+/* 
 export const getMatchDetails = async (matchId) => {
   try {
     console.log('🔍 [API] Fetching match details:', {
@@ -83,8 +84,21 @@ export const getMatchDetails = async (matchId) => {
     throw error.response?.data?.error || "Failed to fetch match details";
   }
 };
+*/
 
-// ✅ Fetch Live Scores for a Match
+// Temporary placeholder function to prevent errors
+export const getMatchDetails = async (matchId) => {
+  console.log('Match details feature temporarily disabled');
+  return {
+    home_team: 'Team 1',
+    away_team: 'Team 2',
+    status: 'scheduled',
+    message: 'Match details feature temporarily disabled'
+  };
+};
+
+// ✅ Fetch Live Scores for a Match - Temporarily disabled
+/* 
 export const getLiveScores = async (matchId) => {
   try {
     const { data } = await apiClient.get(`/match/${matchId}/livescores`);
@@ -93,6 +107,16 @@ export const getLiveScores = async (matchId) => {
     console.error('Error fetching live scores:', error);
     throw error.response?.data?.error || "Failed to fetch live scores";
   }
+};
+*/
+
+// Temporary placeholder function
+export const getLiveScores = async (matchId) => {
+  console.log('Live scores feature temporarily disabled');
+  return {
+    message: 'Live scores feature temporarily disabled',
+    dummy_data: true
+  };
 };
 
 // ✅ Place a Bet
@@ -227,5 +251,27 @@ export const debugCheckOdds = async () => {
   } catch (error) {
     console.error('Debug check failed:', error.response?.data?.error || error.message);
     return { success: false, error: error.message };
+  }
+};
+
+// ✅ Fetch Completed Matches
+export const getCompletedMatches = async () => {
+  try {
+    console.log('Fetching completed matches from API...');
+    const response = await axios.get(`${API_URL}/matches/completed`);
+    console.log(`API Response: Received ${response.data?.length || 0} completed matches`); 
+    
+    if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+      console.log('Completed matches found:', response.data.map(m => `${m.home_team} vs ${m.away_team} (${m.status})`).join(', '));
+    } else {
+      console.log('No completed matches data received from API');
+    }
+    
+    // Ensure we return an empty array if no data
+    return response.data || [];
+  } catch (error) {
+    console.error('Error fetching completed matches:', error);
+    // Return empty array on error to prevent undefined issues
+    return [];
   }
 };

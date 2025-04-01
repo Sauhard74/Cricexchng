@@ -62,50 +62,53 @@ router.get("/matches/live", async (req, res) => {
         // Get all odds (which should now be one per match)
         const odds = await Odds.find();
         
-        // Process matches and determine correct status
-        const matches = odds.map(odd => {
-            const matchDate = new Date(odd.commence);
-            const now = new Date();
-            const fourHoursAgo = new Date(now.getTime() - (4 * 60 * 60 * 1000));
-            const status = (odd.status || '').toLowerCase();
-
-            // Determine the correct status
-            let matchStatus = status;
-            
-            // If match is in the past (more than 4 hours ago), mark as completed
-            if (matchDate < fourHoursAgo) {
-                matchStatus = 'completed';
-            } 
-            // If match is in the future, explicitly mark as scheduled
-            else if (matchDate > now) {
-                matchStatus = 'scheduled';
-                console.log(`Found upcoming match: ${odd.homeTeam} vs ${odd.awayTeam} at ${matchDate}`);
-            }
-            // For matches within the last 4 hours that are marked as live
-            else if (['live', 'in_play', 'started'].includes(status)) {
-                matchStatus = 'live';
-            }
-
-            return {
-                id: odd.matchId,
-                home_team: odd.homeTeam,
-                away_team: odd.awayTeam,
-                home_odds: odd.homeOdds,
-                away_odds: odd.awayOdds,
-                bookmaker: odd.bookmaker,
-                scheduled: odd.commence,
-                status: matchStatus,
-                lastUpdated: odd.lastUpdated,
-                home_team_color: odd.homeTeamColor,
-                away_team_color: odd.awayTeamColor
-            };
-        });
+        // Process matches based on status from the sheet
+        const matches = odds
+            .filter(odd => {
+                // Keep if it's in the sheet (don't do complex time filtering)
+                const status = (odd.status || '').toLowerCase().trim();
+                
+                // Show match if it's in the sheet and not explicitly completed
+                if (status !== 'completed') {
+                    console.log(`✅ Including match: ${odd.homeTeam} vs ${odd.awayTeam} (${status || 'pending'})`);
+                    return true;
+                }
+                
+                console.log(`❌ Excluding completed match: ${odd.homeTeam} vs ${odd.awayTeam}`);
+                return false;
+            })
+            .map(odd => {
+                const status = (odd.status || '').toLowerCase().trim();
+                
+                // Map status value
+                let normalizedStatus = status;
+                if (!status || status === '') {
+                    normalizedStatus = 'pending';
+                }
+                
+                return {
+                    id: odd.matchId,
+                    home_team: odd.homeTeam,
+                    away_team: odd.awayTeam,
+                    home_odds: odd.homeOdds,
+                    away_odds: odd.awayOdds,
+                    bookmaker: odd.bookmaker,
+                    scheduled: odd.commence,
+                    status: normalizedStatus,
+                    lastUpdated: odd.lastUpdated,
+                    home_team_color: odd.homeTeamColor,
+                    away_team_color: odd.awayTeamColor
+                };
+            });
         
-        console.log(`📊 Found ${matches.length} total matches`);
-        console.log('Match breakdown:', matches.reduce((acc, m) => {
+        // Log match breakdown for debugging
+        const matchBreakdown = matches.reduce((acc, m) => {
             acc[m.status] = (acc[m.status] || 0) + 1;
             return acc;
-        }, {}));
+        }, {});
+        
+        console.log(`📊 Found ${matches.length} total matches`);
+        console.log('Match breakdown:', matchBreakdown);
         
         res.json(matches);
     } catch (error) {
@@ -248,6 +251,7 @@ router.get("/match/:matchId", async (req, res) => {
 
         try {
             // Try to find Sportradar mapping
+            /* Temporarily disabled Sportradar integration
             const mapping = await MatchMapping.findOne({ 
                 $or: [
                     { oddsMatchId: decodedMatchId },
@@ -305,6 +309,11 @@ router.get("/match/:matchId", async (req, res) => {
                     }
                 }
             }
+            */
+            
+            // Add message about Sportradar being temporarily disabled
+            console.log('ℹ️ [MATCH ROUTE] Sportradar integration temporarily disabled');
+            
         } catch (sportradarError) {
             console.error('⚠️ [MATCH ROUTE] Error fetching Sportradar data:', sportradarError);
             // Continue with basic match data if Sportradar fetch fails
@@ -695,6 +704,7 @@ router.get('/live', async (req, res) => {
     // If no live matches, try to fetch directly from API
     if (liveMatches.length === 0) {
       try {
+        /* Temporarily disabled Sportradar API integration
         const { fetchLiveMatches } = require('../services/sportsRadarService');
         const apiLiveMatches = await fetchLiveMatches();
         
@@ -704,6 +714,8 @@ router.get('/live', async (req, res) => {
           // Return API results directly if we have them
           return res.json(apiLiveMatches);
         }
+        */
+        console.log('ℹ️ Sportradar API integration temporarily disabled');
       } catch (error) {
         console.error('Error fetching live matches from API:', error);
         // Continue with normal flow if API fetch fails
@@ -755,6 +767,59 @@ router.get('/live', async (req, res) => {
     console.error('Error fetching live matches:', error);
     res.status(500).json({ error: 'Failed to fetch matches' });
   }
+});
+
+// ✅ Route to Fetch Completed Matches
+router.get("/matches/completed", async (req, res) => {
+    try {
+        console.log('🟡 [ROUTE HIT] Fetching completed matches');
+
+        // Get all odds entries
+        const odds = await Odds.find();
+        
+        // Process matches based on completed status or if they were in sheet but no longer
+        const matches = odds
+            .filter(odd => {
+                const status = (odd.status || '').toLowerCase().trim();
+
+                // Include if:
+                // 1. Explicitly marked as completed in sheets
+                if (status === 'completed') {
+                    console.log(`✅ Including completed match from sheets: ${odd.homeTeam} vs ${odd.awayTeam}`);
+                    return true;
+                }
+
+                // 2. Match was in sheets but is no longer there
+                if (odd.isInSheet === false) {
+                    console.log(`✅ Including match no longer in sheets: ${odd.homeTeam} vs ${odd.awayTeam}`);
+                    return true;
+                }
+
+                return false;
+            })
+            .map(odd => ({
+                id: odd.matchId,
+                home_team: odd.homeTeam,
+                away_team: odd.awayTeam,
+                home_odds: odd.homeOdds,
+                away_odds: odd.awayOdds,
+                bookmaker: odd.bookmaker,
+                scheduled: odd.commence,
+                status: 'completed',
+                lastUpdated: odd.lastUpdated,
+                home_team_color: odd.homeTeamColor,
+                away_team_color: odd.awayTeamColor
+            }));
+
+        // Sort matches by date, most recent first
+        matches.sort((a, b) => new Date(b.scheduled) - new Date(a.scheduled));
+        
+        console.log(`📊 Found ${matches.length} completed matches`);
+        res.json(matches);
+    } catch (error) {
+        console.error('❌ Error fetching completed matches:', error);
+        res.status(500).json({ error: 'Server error' });
+    }
 });
 
 module.exports = router;

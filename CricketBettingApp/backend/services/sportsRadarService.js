@@ -30,10 +30,21 @@ async function fetchMatches(date) {
             try {
                 await delay(RATE_LIMIT_DELAY);
                 const matchId = match.sport_event.id;
-                const matchDetails = await fetchMatchDetails(matchId);
-                if (matchDetails) {
-                    matches.push(matchDetails);
-                }
+                // Commented out detailed match fetching - temporarily disabled
+                // const matchDetails = await fetchMatchDetails(matchId);
+                // if (matchDetails) {
+                //     matches.push(matchDetails);
+                // }
+
+                // Instead, just use basic match data from schedule
+                const basicMatchData = {
+                    id: match.sport_event.id,
+                    scheduled: match.sport_event.scheduled,
+                    home_team: match.sport_event.competitors[0]?.name || "Unknown Team",
+                    away_team: match.sport_event.competitors[1]?.name || "Unknown Team",
+                    status: match.sport_event_status?.status || "unknown"
+                };
+                matches.push(basicMatchData);
             } catch (error) {
                 console.error(`Failed to fetch match details: ${error.message}`);
             }
@@ -50,6 +61,24 @@ async function fetchMatches(date) {
     }
 }
 
+// Temporarily disabled fetchMatchDetails function - mock implementation
+async function fetchMatchDetails(matchId) {
+    console.log('Match details feature temporarily disabled');
+    return {
+        id: matchId,
+        sport_event: {
+            id: matchId,
+            status: 'not_started',
+            scheduled: new Date().toISOString()
+        },
+        home_team: 'Team 1',
+        away_team: 'Team 2',
+        status: 'scheduled'
+    };
+}
+
+// Original fetchMatchDetails implementation - temporarily disabled
+/*
 async function fetchMatchDetails(matchId) {
     try {
         if (!API_KEY) throw new Error("Sportradar API key not configured");
@@ -252,31 +281,38 @@ async function tryFetchMatch(matchId) {
                 home: bowlingScorecard.home_team.length,
                 away: bowlingScorecard.away_team.length
             },
-            commentary_entries: commentary.length
+            commentary: commentary.length
         });
 
+        // Return the formatted match data with all the extracted information
         return {
-            id: matchId,
-            league: match.sport_event.season?.name || "N/A",
-            venue: match.sport_event.venue?.name || "Unknown Venue",
+            id: match.sport_event.id,
             scheduled: match.sport_event.scheduled,
-            status: match.sport_event_status?.status || "N/A",
+            status: match.sport_event_status?.status || "unknown",
+            venue: match.sport_event.venue?.name || "TBD",
+            home_team: homeTeam,
+            away_team: awayTeam,
+            home_score: homeScore,
+            away_score: awayScore,
+            home_overs: homeOvers,
+            away_overs: awayOvers,
             toss_winner: tossWinner,
             toss_decision: tossDecision,
             match_winner: matchWinner,
-            home_team: homeTeam,
-            away_team: awayTeam,
-            home_score: `${homeScore} (${homeOvers} overs)`,
-            away_score: `${awayScore} (${awayOvers} overs)`,
             batting_scorecard: battingScorecard,
             bowling_scorecard: bowlingScorecard,
             commentary: commentary
         };
     } catch (error) {
-        console.error("❌ [SPORTRADAR] Error in tryFetchMatch:", error.message);
-        throw error;
+        console.error("❌ [SPORTRADAR] Error fetching match details:", error.message);
+        if (error.response) {
+            console.error("API Response:", error.response.data);
+            console.error("Status:", error.response.status);
+        }
+        return null;
     }
 }
+*/
 
 async function fetchLiveMatches() {
     try {

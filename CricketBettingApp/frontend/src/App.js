@@ -6,7 +6,8 @@ import Footer from "./components/Footer";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-import MatchDetailsPage from "./pages/MatchDetailsPage";
+// Temporarily removed MatchDetailsPage 
+// import MatchDetailsPage from "./pages/MatchDetailsPage";
 import BettingPage from "./pages/BettingPage";
 import ProfilePage from "./pages/ProfilePage";
 import BetsPage from "./pages/BetsPage";
@@ -38,7 +39,8 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/home" element={<HomePage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/match/:matchId" element={<MatchDetailsPage />} />
+            {/* Temporarily removed match details route */}
+            {/* <Route path="/match/:matchId" element={<MatchDetailsPage />} /> */}
             <Route path="/betting/:matchId/*" element={<BettingPage />} />
             <Route path="/bets" element={<BetsPage />} />
             <Route path="/bet/:betId" element={<BetDetailPage />} />

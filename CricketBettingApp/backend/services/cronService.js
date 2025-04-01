@@ -7,15 +7,65 @@ const Match = require('../models/Match');
 const MatchMapping = require('../models/MatchMapping');
 
 // Helper function to normalize match status
-function normalizeStatus(status) {
-  status = status?.toLowerCase();
-  if (status === 'pending' || status === 'scheduled') {
-    return 'not_started';
+function normalizeStatus(status, matchDate) {
+  if (!matchDate) {
+    console.log('⚠️ No match date provided, defaulting to scheduled');
+    return 'scheduled';
   }
-  if (status === 'completed' || status === 'finished') {
-    return 'closed';
+
+  // Convert matchDate to Date object if it's a string
+  const matchDateTime = new Date(matchDate);
+  const now = new Date();
+  
+  // First check: Is the match from a previous day?
+  const isYesterdayOrBefore = matchDateTime.toDateString() !== now.toDateString() && 
+                             matchDateTime < now;
+  
+  if (isYesterdayOrBefore) {
+    console.log(`Match from ${matchDateTime.toDateString()} is from a previous day, marking as completed`);
+    return 'completed';
   }
-  return status;
+  
+  // Add buffer times
+  const pastBuffer = 4 * 60 * 60 * 1000; // 4 hours after scheduled time
+  const futureBuffer = 15 * 60 * 1000;   // 15 minutes before scheduled time
+  
+  // First layer: Check sheet status
+  const sheetStatus = (status || '').toLowerCase().trim();
+  
+  // If explicitly marked as live in sheets, verify it's today's match
+  if (sheetStatus === 'live') {
+    // Check if match is scheduled for today
+    const isToday = matchDateTime.toDateString() === now.toDateString();
+    if (!isToday) {
+      console.log('⚠️ Match marked as live but not scheduled for today, marking as completed');
+      return 'completed';
+    }
+    return 'live';
+  }
+  
+  // If explicitly marked as completed in sheets, respect that
+  if (sheetStatus === 'completed') {
+    return 'completed';
+  }
+  
+  // Second layer: Date-based validation
+  // If match is not in sheets or has another status, use date logic
+  
+  // If match date is more than 4 hours in the past
+  if (matchDateTime.getTime() + pastBuffer < now.getTime()) {
+    console.log('Match is more than 4 hours past scheduled time, marking as completed');
+    return 'completed';
+  }
+  
+  // If match is in the future (with 15-min buffer)
+  if (matchDateTime.getTime() - futureBuffer > now.getTime()) {
+    console.log('Match is in the future, marking as scheduled');
+    return 'scheduled';
+  }
+  
+  // For matches within the buffer times, keep as scheduled unless explicitly marked otherwise
+  return 'scheduled';
 }
 
 // Helper function to map all matches to Sportradar
@@ -72,12 +122,68 @@ async function mapAllMatchesToSportradar() {
   }
 }
 
+// Add this function before initOddsCronJob
+async function cleanupPastMatches() {
+  try {
+    console.log('🧹 Starting cleanup of past matches...');
+    const now = new Date();
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    yesterday.setHours(23, 59, 59, 999);  // End of yesterday
+
+    // Find all matches from before today that aren't marked as completed
+    const pastMatches = await Match.find({
+      scheduled: { $lt: yesterday },
+      status: { $ne: 'completed' }
+    });
+
+    console.log(`Found ${pastMatches.length} past matches to cleanup`);
+
+    for (const match of pastMatches) {
+      console.log(`Marking past match as completed: ${match.home_team} vs ${match.away_team} (${new Date(match.scheduled).toDateString()})`);
+      
+      // Update match status
+      await Match.findByIdAndUpdate(match._id, {
+        status: 'completed',
+        lastUpdated: new Date()
+      });
+
+      // Update corresponding odds entry
+      await Odds.findOneAndUpdate(
+        { matchId: match.matchId },
+        {
+          status: 'completed',
+          lastUpdated: new Date()
+        }
+      );
+    }
+
+    console.log('✅ Past matches cleanup completed');
+  } catch (error) {
+    console.error('❌ Error during past matches cleanup:', error);
+  }
+}
+
 const initOddsCronJob = (broadcastCallback) => {
+  // Run cleanup when service starts
+  cleanupPastMatches();
+
   // Run every 15 seconds
   cron.schedule('*/15 * * * * *', async () => {
     try {
       console.log('🔄 Fetching latest odds...');
       const latestOdds = await fetchOddsFromSheet();
+      
+      // Get all existing matches from database that are not completed
+      const existingMatches = await Match.find({ 
+        status: { $nin: ['completed'] } 
+      });
+      
+      // Create a set of match IDs from the sheet data
+      const sheetMatchIds = new Set();
+      
+      // First, mark all existing odds as not in sheet
+      await Odds.updateMany({}, { isInSheet: false });
       
       // Group by team names - no bookmaker preference
       const teamGroups = {};
@@ -85,10 +191,40 @@ const initOddsCronJob = (broadcastCallback) => {
       for (const odds of latestOdds) {
         // Create a consistent key using team names
         const teamKey = `${odds.homeTeam.trim().toLowerCase()}_vs_${odds.awayTeam.trim().toLowerCase()}`;
+        const matchId = `match_${odds.homeTeam.replace(/\s+/g, '')}_${odds.awayTeam.replace(/\s+/g, '')}`;
+        
+        // Add to set of current sheet matches
+        sheetMatchIds.add(matchId);
         
         // Just take the first one we encounter for each match
         if (!teamGroups[teamKey]) {
           teamGroups[teamKey] = odds;
+        }
+      }
+      
+      // Check for matches that were in DB but not in sheet anymore
+      for (const match of existingMatches) {
+        if (!sheetMatchIds.has(match.matchId)) {
+          console.log(`⚠️ Match ${match.matchId} (${match.home_team} vs ${match.away_team}) not found in sheets, marking as completed`);
+          
+          // Update match status to completed
+          await Match.findOneAndUpdate(
+            { matchId: match.matchId },
+            { 
+              status: 'completed',
+              lastUpdated: new Date()
+            }
+          );
+          
+          // Update odds status to completed
+          await Odds.findOneAndUpdate(
+            { matchId: match.matchId },
+            { 
+              status: 'completed',
+              lastUpdated: new Date(),
+              isInSheet: false
+            }
+          );
         }
       }
       
@@ -103,7 +239,7 @@ const initOddsCronJob = (broadcastCallback) => {
           const matchId = `match_${odds.homeTeam.replace(/\s+/g, '')}_${odds.awayTeam.replace(/\s+/g, '')}`;
           odds.matchId = matchId;
           
-          console.log('Generated matchId:', matchId); // Add logging to verify matchId format
+          console.log('Generated matchId:', matchId);
           
           // Use exact values from sheets
           odds.homeOdds = parseFloat(odds.homeOdds);
@@ -117,7 +253,7 @@ const initOddsCronJob = (broadcastCallback) => {
               home_team: odds.homeTeam,
               away_team: odds.awayTeam,
               scheduled: new Date(odds.commence),
-              status: normalizeStatus(odds.status || "not_started")
+              status: normalizeStatus(odds.status || "not_started", odds.commence)
             },
             { new: true, upsert: true }
           );
@@ -126,47 +262,10 @@ const initOddsCronJob = (broadcastCallback) => {
             id: match._id,
             matchId: match.matchId,
             home_team: match.home_team,
-            away_team: match.away_team
+            away_team: match.away_team,
+            status: match.status
           });
 
-          // Try to create match mapping if it doesn't exist
-          const existingMapping = await MatchMapping.findOne({ oddsMatchId: matchId });
-          if (!existingMapping) {
-            try {
-              const sportradarMatchId = await findSportradarMatchId(matchId);
-              if (sportradarMatchId) {
-                const newMapping = new MatchMapping({
-                  oddsMatchId: matchId,
-                  sportradarMatchId: sportradarMatchId,
-                  homeTeam: odds.homeTeam,
-                  awayTeam: odds.awayTeam,
-                  scheduled: new Date(odds.commence)
-                });
-                await newMapping.save();
-                console.log(`✅ Created new mapping for ${odds.homeTeam} vs ${odds.awayTeam}`);
-
-                // Update match with Sportradar data
-                const sportradarData = await fetchMatchDetails(sportradarMatchId);
-                if (sportradarData) {
-                  await Match.findByIdAndUpdate(match._id, {
-                    venue: sportradarData.venue,
-                    status: sportradarData.status || match.status,
-                    toss_winner: sportradarData.toss_winner,
-                    toss_decision: sportradarData.toss_decision,
-                    match_winner: sportradarData.match_winner,
-                    home_score: sportradarData.home_score,
-                    away_score: sportradarData.away_score,
-                    batting_scorecard: sportradarData.batting_scorecard || [],
-                    bowling_scorecard: sportradarData.bowling_scorecard || [],
-                    commentary: sportradarData.commentary || []
-                  });
-                }
-              }
-            } catch (mappingError) {
-              console.error(`❌ Error creating mapping for match ${matchId}:`, mappingError);
-            }
-          }
-          
           // Update odds in database - use a consistent matchId
           const updatedOdd = await Odds.findOneAndUpdate(
             { matchId },
@@ -179,7 +278,8 @@ const initOddsCronJob = (broadcastCallback) => {
               bookmaker: odds.bookmaker,
               commence: odds.commence,
               status: odds.status,
-              lastUpdated: new Date()
+              lastUpdated: new Date(),
+              isInSheet: true
             },
             { new: true, upsert: true }
           );
@@ -202,6 +302,12 @@ const initOddsCronJob = (broadcastCallback) => {
     }
   });
 
+  // Also add daily cleanup at midnight
+  cron.schedule('0 0 * * *', async () => {
+    console.log('🔄 Running daily cleanup of past matches...');
+    await cleanupPastMatches();
+  });
+
   // New cron job to update live match statuses every 2 minutes
   cron.schedule('*/2 * * * *', async () => {
     try {
@@ -217,9 +323,16 @@ const initOddsCronJob = (broadcastCallback) => {
             // Generate matchId in the exact format as seen in database
             const matchId = `match_${liveMatch.home_team.replace(/\s+/g, '')}_${liveMatch.away_team.replace(/\s+/g, '')}`;
             
-            console.log('Generated live match ID:', matchId); // Add logging to verify matchId format
+            console.log('Generated live match ID:', matchId);
             
-            // Update the match status in the database
+            // First check if we have this match in our odds collection
+            const existingOdds = await Odds.findOne({ matchId });
+            if (!existingOdds) {
+              console.log(`⚠️ No odds found for match ${matchId}, skipping status update`);
+              continue;
+            }
+
+            // Only update match details, but keep the status from sheets
             const updatedMatch = await Match.findOneAndUpdate(
               { 
                 $or: [
@@ -229,32 +342,27 @@ const initOddsCronJob = (broadcastCallback) => {
                 ]
               },
               { 
-                status: 'live',
                 matchId: matchId,
                 home_team: liveMatch.home_team,
                 away_team: liveMatch.away_team,
-                scheduled: liveMatch.scheduled || new Date()
+                scheduled: existingOdds.commence,
+                last_updated: new Date()
               },
               { new: true, upsert: true }
             );
             
             if (updatedMatch) {
-              console.log(`✅ Updated match status to LIVE: ${liveMatch.home_team} vs ${liveMatch.away_team}`);
-              
-              // Also update the odds status if it exists
-              await Odds.updateMany(
-                { matchId },
-                { status: 'in_play' }
-              );
+              console.log(`✅ Updated match details: ${liveMatch.home_team} vs ${liveMatch.away_team}`);
+              console.log('Current status from sheets:', existingOdds.status);
             }
           } catch (error) {
             console.error(`❌ Error updating live match:`, error);
           }
         }
         
-        // If there are callbacks registered, broadcast the live match status changes
+        // If there are callbacks registered, broadcast updates
         if (broadcastCallback) {
-          const updatedOdds = await Odds.find({ status: 'in_play' });
+          const updatedOdds = await Odds.find({ status: 'live' });
           if (updatedOdds.length > 0) {
             broadcastCallback(updatedOdds);
           }
